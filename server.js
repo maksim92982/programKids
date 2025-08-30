@@ -77,15 +77,14 @@ app.post('/api/create-payment', async (req, res) => {
     const finalPrice = await calcFinalPriceRUB({ module, promoCode, bonuses });
 
     // 3. Создание заказа в базе данных
-    // Предполагаем, что у вас есть метод createOrder в Database
-    const orderId = await db.createOrder({
-      email,
-      module,
-      amountRUB: finalPrice,
-      bonuses: bonuses || 0,
-      promoCode: promoCode || null,
-      status: 'pending'
-    });
+const orderId = await db.createOrder({
+    email,
+    module,
+    amountRUB: finalPrice,
+    bonuses: bonuses || 0,
+    promoCode: promoCode || null,
+    status: 'pending'
+});
 
     // 4. Подготовка данных для Сам.Эквайринга
     const orderData = {
@@ -376,3 +375,4 @@ process.on('SIGTERM', async () => {
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log('Server started on ' + PORT));
+
