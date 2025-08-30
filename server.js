@@ -109,7 +109,7 @@ const orderId = await db.createOrder({
           <title>Перенаправление на оплату...</title>
       </head>
       <body>
-          <form id="paymentForm" action="https://3dsec.sberbank.ru/payment/merchants/test/payment_ru.html" method="POST">
+          <form id="paymentForm" action="https://3dsec.sberbank.ru/payment/merchants/sbersafe_sberid/payment_ru.html" method="POST">
               <input type="hidden" name="order_id" value="${orderData.order_id}">
               <input type="hidden" name="amount" value="${orderData.amount}">
               <input type="hidden" name="currency" value="${orderData.currency}">
@@ -375,4 +375,5 @@ process.on('SIGTERM', async () => {
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log('Server started on ' + PORT));
+
 
