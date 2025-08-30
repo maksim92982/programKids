@@ -40,7 +40,21 @@ async function calcFinalPriceRUB({ module, promoCode, bonuses }) {
 function sha256hex(str) {
   return crypto.createHash('sha256').update(str, 'utf8').digest('hex');
 }
-// Добавь этот маршрут в server.js
+
+// Вспомогательная функция для генерации пароля
+function generatePassword() {
+  const length = 8;
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let password = "";
+  for (let i = 0; i < length; i++) {
+    password += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return password;
+}
+
+// === Маршруты ===
+
+// Статические файлы
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
@@ -48,22 +62,91 @@ app.get('/', (req, res) => {
 app.get('/payment-result.html', (req, res) => {
   res.sendFile(__dirname + '/payment-result.html');
 });
-// Создание платежа
 
+// Создание платежа (ДОБАВЛЕНО)
+app.post('/api/create-payment', async (req, res) => {
+  try {
+    const { email, module, promoCode, bonuses, returnUrl } = req.body;
+
+    // 1. Валидация данных
+    if (!email || !module) {
+      return res.status(400).json({ error: 'Email и модуль обязательны' });
+    }
+
+    // 2. Расчет итоговой цены
+    const finalPrice = await calcFinalPriceRUB({ module, promoCode, bonuses });
+
+    // 3. Создание заказа в базе данных
+    // Предполагаем, что у вас есть метод createOrder в Database
+    const orderId = await db.createOrder({
+      email,
+      module,
+      amountRUB: finalPrice,
+      bonuses: bonuses || 0,
+      promoCode: promoCode || null,
+      status: 'pending'
+    });
+
+    // 4. Подготовка данных для Сам.Эквайринга
+    const orderData = {
+      order_id: orderId,
+      amount: finalPrice,
+      currency: 'RUB',
+      client_email: email,
+      return_url: returnUrl,
+      // Другие необходимые параметры согласно документации Сам.Эквайринга
+    };
+
+    // 5. Генерация подписи
+    const signatureData = `${orderData.order_id}${orderData.amount}${SHOP.apiKey}`;
+    orderData.signature = sha256hex(signatureData);
+
+    // 6. Отправка формы в Сам.Эквайринг
+    const paymentFormHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <meta charset="utf-8">
+          <title>Перенаправление на оплату...</title>
+      </head>
+      <body>
+          <form id="paymentForm" action="https://3dsec.sberbank.ru/payment/merchants/test/payment_ru.html" method="POST">
+              <input type="hidden" name="order_id" value="${orderData.order_id}">
+              <input type="hidden" name="amount" value="${orderData.amount}">
+              <input type="hidden" name="currency" value="${orderData.currency}">
+              <input type="hidden" name="client_email" value="${orderData.client_email}">
+              <input type="hidden" name="return_url" value="${orderData.return_url}">
+              <input type="hidden" name="signature" value="${orderData.signature}">
+          </form>
+          <script>
+              document.getElementById('paymentForm').submit();
+          </script>
+      </body>
+      </html>
+    `;
+
+    // 7. Отправляем HTML с формой оплаты
+    res.json({
+      orderId: orderId,
+      paymentPageHtml: paymentFormHtml
+    });
+
+  } catch (error) {
+    console.error('Ошибка создания платежа:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 // Вебхук от Сам.Эквайринга
 app.post('/api/callback', async (req, res) => {
   try {
-    // Сам.Эквайринг шлёт JSON; в PHP это json_decode(file_get_contents('php://input'), true)
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress;
-    // при работе за прокси добавь реальную проверку
-    // if (!SHOP.ipAllow.has(ip)) { return res.status(403).end(); }
-
-    const data = req.body; // {order_id,status,amount,currency,..., signature}
+    
+    const data = req.body;
     const { order_id, status, amount, signature } = data || {};
     if (!order_id || !amount || !signature) return res.status(400).end();
 
-    // Проверяем подпись уведомления: sha256(order_id + amount + api_key)
+    // Проверяем подпись уведомления
     const calc = sha256hex(`${order_id}${amount}${SHOP.apiKey}`);
     if (calc !== signature) {
       console.warn('Bad signature for', order_id);
@@ -102,7 +185,7 @@ app.post('/api/callback', async (req, res) => {
       await db.updateOrderStatus(order_id, 'failed');
     }
 
-    res.status(200).end(); // Сам.Эквайринг ждёт 200 OK
+    res.status(200).end();
   } catch (error) {
     console.error('Ошибка в вебхуке:', error);
     res.status(500).end();
@@ -134,22 +217,8 @@ app.get('/api/order-status', async (req, res) => {
   }
 });
 
-// Вспомогательная функция для генерации пароля
-function generatePassword() {
-  const length = 8;
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    password += charset.charAt(Math.floor(Math.random() * charset.length));
-  }
-  return password;
-}
-
 // отдаем статику (index.html, payment-result.html и т.д.)
 app.use(express.static('./'));
-
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log('Server started on ' + PORT));
 
 // API для работы с пользователями
 app.post('/api/register', async (req, res) => {
@@ -305,6 +374,5 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-
-
-
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => console.log('Server started on ' + PORT));
