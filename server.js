@@ -49,34 +49,11 @@ app.get('/payment-result.html', (req, res) => {
   res.sendFile(__dirname + '/payment-result.html');
 });
 // Создание платежа
-app.post('/api/create-payment', async (req, res) => {
-  try {
-    // ВРЕМЕННО: верни тестовую страницу вместо реального платежа
-    res.json({
-      success: true,
-      orderId: 'test-' + Date.now(),
-      paymentPageHtml: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Тест оплаты</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body>
-          <h1>Тестовая страница оплаты</h1>
-          <p>Модуль: ${req.body.module}</p>
-          <p>Email: ${req.body.email}</p>
-          <p>Это тест - реальный платеж отключен</p>
-          <button onclick="window.close()">Закрыть</button>
-        </body>
-        </html>
-      `
-    });
-  } catch (error) {
-    console.error('Payment error:', error);
-    res.status(500).json({ error: 'Payment failed' });
-  }
-});
+<meta http-equiv="Content-Security-Policy" content="
+  frame-src https://player.vimeo.com https://vk.com https://vimeo.com 'self';
+  script-src 'self' 'unsafe-eval';
+  default-src 'self';
+">
 
 // Вебхук от Сам.Эквайринга
 app.post('/api/callback', async (req, res) => {
@@ -331,5 +308,6 @@ process.on('SIGTERM', async () => {
   await db.close();
   process.exit(0);
 });
+
 
 
