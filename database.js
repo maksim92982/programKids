@@ -272,16 +272,21 @@ class Database {
 
     // Методы для работы с заказами (ОБНОВЛЕНО)
     async createOrder(orderData) {
-        const { email, module, amountRUB, bonuses, promoCode, status } = orderData;
-        const orderId = this.generateOrderId();
-        
-        await this.run(
-            'INSERT INTO orders (id, email, module, amountRUB, bonuses, promoCode, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [orderId, email, module, amountRUB, bonuses || 0, promoCode || null, status || 'pending']
-        );
-        
-        return orderId;
+    const { email, module, amountRUB, bonuses, promoCode, status } = orderData;
+    const orderId = this.generateOrderId();
+    
+    // Добавьте проверку на undefined
+    if (!email || !module) {
+        throw new Error('Email and module are required');
     }
+    
+    await this.run(
+        'INSERT INTO orders (id, email, module, amountRUB, bonuses, promoCode, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [orderId, email, module, amountRUB, bonuses || 0, promoCode || null, status || 'pending']
+    );
+    
+    return orderId;
+}
 
     async updateOrderStatus(orderId, status) {
         await this.run(
@@ -355,5 +360,6 @@ class Database {
 }
 
 module.exports = Database;
+
 
 
