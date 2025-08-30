@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
 
-const API_BASE = '/api';
-const RETURN_URL = location.origin + '/payment-result.html';
+
     
     <title>Обучающая платформа</title>
     <style>
@@ -923,6 +922,11 @@ html, body {
 </div>
     </body> 
     <script>
+// === Конфиг фронта ===
+const API_BASE = '/api';
+const RETURN_URL = location.origin + '/payment-result.html';
+
+        
       // Имитация базы данных
 const database = {
     admins: [
@@ -2189,5 +2193,6 @@ function showPurchaseModal(moduleName, bonusBalance) {
 
 }
 </script>
+
 
 
