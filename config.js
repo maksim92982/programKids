@@ -14,8 +14,8 @@ module.exports = {
     // Конфигурация магазина для самозанятые.рф
     shop: {
         apiKey: process.env.SELFWORK_API_KEY || 'UxYjU5ZDMxOGU1ZmFjYzE3',
-        origin: process.env.SHOP_ORIGIN || 'https://your-domain.com/',
-        referer: process.env.SHOP_REFERER || 'your-domain.com',
+        origin: process.env.SHOP_ORIGIN || 'https://program-kids.vercel.app/',
+        referer: process.env.SHOP_REFERER || 'program-kids.vercel.app',
         // Белые IP Сам.Эквайринга
         allowedIPs: ['178.205.169.35', '81.23.144.157']
     },
@@ -39,3 +39,4 @@ module.exports = {
         file: process.env.LOG_FILE || './logs/app.log'
     }
 };
+
