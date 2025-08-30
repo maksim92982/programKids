@@ -51,56 +51,30 @@ app.get('/payment-result.html', (req, res) => {
 // Создание платежа
 app.post('/api/create-payment', async (req, res) => {
   try {
-    const { email, module, promoCode, bonuses = 0, returnUrl } = req.body;
-    if (!email || !module) return res.status(400).json({ error: 'email и module обязательны' });
-
-    const amountRUB = await calcFinalPriceRUB({ module, promoCode, bonuses });
-    const amountKopec = amountRUB * 100;
-
-    const orderId = crypto.randomUUID(); // до 35 символов — ок
-    
-    // Сохраняем заказ в базу данных
-    await db.createOrder(orderId, email, module, amountRUB, bonuses, promoCode);
-
-    // Формируем поля info[0] — в чеке
-    const info0 = {
-      name: `Доступ к модулю ${module} (${email})`,
-      quantity: 1,
-      amount: amountKopec
-    };
-
-    // signature = sha256(order_id + amount + info[0].name + info[0].quantity + info[0].amount + api_key)
-    const signBase =
-      `${orderId}${amountKopec}${info0.name}${info0.quantity}${info0.amount}${SHOP.apiKey}`;
-    const signature = sha256hex(signBase);
-
-    // Собираем x-www-form-urlencoded
-    const form = new URLSearchParams();
-    form.append('order_id', orderId);
-    form.append('amount', String(amountKopec));
-    form.append('signature', signature);
-    form.append('info[0][name]', info0.name);
-    form.append('info[0][quantity]', String(info0.quantity));
-    form.append('info[0][amount]', String(info0.amount));
-    // Сам.Эквайринг вернёт на URL из настроек магазина; если поддерживает параметр — добавь:
-    if (returnUrl) form.append('return_url', returnUrl); // если в их API такой параметр есть; иначе настрой в ЛК
-
-    // Инициализация платежа (Сам.Эквайринг отдаёт HTML страницы оплаты)
-    const resp = await axios.post('https://pro.selfwork.ru/merchant/v1/init', form, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Origin': SHOP.origin,
-        'Referer': SHOP.referer
-      },
-      // чтобы получить сырую HTML-страницу целиком:
-      responseType: 'text',
-      transformResponse: r => r
+    // ВРЕМЕННО: верни тестовую страницу вместо реального платежа
+    res.json({
+      success: true,
+      orderId: 'test-' + Date.now(),
+      paymentPageHtml: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Тест оплаты</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body>
+          <h1>Тестовая страница оплаты</h1>
+          <p>Модуль: ${req.body.module}</p>
+          <p>Email: ${req.body.email}</p>
+          <p>Это тест - реальный платеж отключен</p>
+          <button onclick="window.close()">Закрыть</button>
+        </body>
+        </html>
+      `
     });
-
-    return res.json({ orderId, paymentPageHtml: resp.data });
-  } catch (e) {
-    console.error(e?.response?.data || e.message);
-    return res.status(500).json({ error: 'init payment failed' });
+  } catch (error) {
+    console.error('Payment error:', error);
+    res.status(500).json({ error: 'Payment failed' });
   }
 });
 
@@ -357,4 +331,5 @@ process.on('SIGTERM', async () => {
   await db.close();
   process.exit(0);
 });
+
 
