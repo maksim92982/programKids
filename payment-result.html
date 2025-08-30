@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<meta charset="utf-8">
+<title>Результат оплаты</title>
+<body>
+<h2 id="title">Проверяем оплату…</h2>
+<script>
+(async function () {
+  const url = new URL(location.href);
+  const orderId = url.searchParams.get('id');
+  if (!orderId) {
+    document.getElementById('title').textContent = 'Не указан номер заказа';
+    return;
+  }
+  try {
+    const r = await fetch('/api/order-status?id=' + encodeURIComponent(orderId));
+    if (!r.ok) throw new Error('bad');
+    const { status, payload } = await r.json();
+
+    if (status === 'succeeded') {
+      // На сервере вебхук уже проверил подпись и запомнил email+module
+      // Здесь открываем доступ локальному юзеру (как и раньше делал клиент)
+      const email  = payload.email;
+      const module = payload.module;
+      // если юзер уже есть — залогинимся
+      const known = database.users.find(u=>u.email===email);
+      if (!known) {
+        database.registerUser(email, database.generatePassword());
+      }
+      database.loginUser(email, database.getUserById(database.users.find(u=>u.email===email).id)?.password || '', false);
+      // отметим покупку (без списания бонусов — это сделал сервер)
+      if (!database.currentUser.availableModules.includes(module)) {
+        database.currentUser.availableModules.push(module);
+        database.saveToLocalStorage();
+      }
+      document.getElementById('title').textContent = 'Оплата прошла успешно. Доступ открыт.';
+      setTimeout(()=>{ location.href = '/'; }, 1500);
+    } else if (status === 'processing') {
+      document.getElementById('title').textContent = 'Платёж обрабатывается… Обновляем.';
+      setTimeout(()=>location.reload(), 2000);
+    } else {
+      document.getElementById('title').textContent = 'Оплата не прошла или отменена.';
+      setTimeout(()=>{ location.href = '/'; }, 2000);
+    }
+  } catch (e) {
+    document.getElementById('title').textContent = 'Ошибка проверки статуса.';
+  }
+})();
+</script>
+</body>
+</html>
