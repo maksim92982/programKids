@@ -13,9 +13,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // === Конфиг для Самозанятый.рф ===
 const SAMOZANATY_CONFIG = {
-  paymentUrl: 'https://pay.samozanaty.ru/payment',
-  apiKey: '4l5FOug3YpfAx54yfnXA7Rvomeylyjlk', // НОВЫЙ API ключ
-  shopId: '0044044', // НОВЫЙ ID магазина
+  paymentUrl: 'https://pro.selfwork.ru/merchant/v1/init', // ИЗМЕНИТЬ!
+  apiKey: '4l5FOug3YpfAx54yfnXA7Rvomeylyjlk',
+  shopId: '0044044',
   successUrl: 'https://program-kids.vercel.app/payment-result.html',
   callbackUrl: 'https://program-kids.vercel.app/api/callback'
 };
@@ -384,5 +384,6 @@ process.on('SIGTERM', async () => {
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log('Server started on ' + PORT));
+
 
 
