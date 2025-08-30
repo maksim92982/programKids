@@ -2065,6 +2065,7 @@ document.getElementById('cancel-purchase').addEventListener('click', function(e)
 
 // Обработчик формы покупки
 // Обработчик формы покупки
+// Обработчик формы покупки
 document.getElementById('purchase-form').addEventListener('submit', async function(e) {
   e.preventDefault();
 
@@ -2078,7 +2079,6 @@ document.getElementById('purchase-form').addEventListener('submit', async functi
   }
 
   try {
-    // Запрашиваем у бэкенда создание платежа
     const resp = await fetch(`${API_BASE}/create-payment`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
@@ -2092,14 +2092,12 @@ document.getElementById('purchase-form').addEventListener('submit', async functi
     });
 
     if (!resp.ok) throw new Error('Ошибка создания платежа');
-    const result = await resp.json();
+    const { orderId, paymentPageHtml } = await resp.json();
 
-    if (result.success) {
-      // Перенаправляем на страницу Самозанятый.рф
-      window.location.href = result.paymentUrl;
-    } else {
-      alert('Ошибка: ' + (result.error || 'Не удалось создать платеж'));
-    }
+    const w = window.open('', '_self');
+    w.document.open();
+    w.document.write(paymentPageHtml);
+    w.document.close();
   } catch (err) {
     console.error(err);
     alert('Не удалось перейти к оплате. Попробуйте позже.');
@@ -2200,6 +2198,7 @@ function showPurchaseModal(moduleName, bonusBalance) {
 
 }
 </script>
+
 
 
 
