@@ -228,6 +228,11 @@ class Database {
         return rows.map(row => row.module);
     }
 
+    // ДОБАВЬТЕ ЭТОТ МЕТОД ЗДЕСЬ:
+async getContentByModule(module) {
+    return await this.get('SELECT * FROM content WHERE module = ?', [module]);
+}
+
     async addUserModule(userId, module) {
         try {
             await this.run(
@@ -360,6 +365,7 @@ class Database {
 }
 
 module.exports = Database;
+
 
 
 
