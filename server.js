@@ -1,7 +1,7 @@
 // npm i express axios body-parser crypto cors sqlite3
 const express = require('express');
 const axios = require('axios');
-const crypto = require('rypto');
+const crypto = require('crypto');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const Database = require('./database');
@@ -13,9 +13,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // === Конфиг для Самозанятый.рф ===
 const SAMOZANATY_CONFIG = {
-  paymentUrl: 'https://самозанятый.рф/payment',
-  apiKey: process.env.SAMOZANATY_API_KEY || 'your_samozanaty_api_key',
-  callbackUrl: process.env.CALLBACK_URL || '/api/samozanaty-callback'
+  paymentUrl: 'https://pay.samozanaty.ru/payment', // Основной URL платежей
+  apiKey: 'lJQHoFADBvSC8KedJf511nufkhg592ud', // Ваш API ключ
+  shopId: '0a030f501', // ID магазина
+  successUrl: 'https://test-shop.ru/', // URL после успешной оплаты
+  callbackUrl: 'https://test-shop.ru/api/callback' // URL для уведомлений
 };
 
 // Инициализация базы данных
@@ -32,6 +34,19 @@ async function calcFinalPriceRUB({ module, promoCode, bonuses }) {
   const promo = promoCode ? 500 : 0;
   const useBonus = Math.min(bonuses || 0, Math.max(base - promo, 0));
   return Math.max(base - promo - useBonus, 0);
+}
+
+// Генерация подписи для Самозанятый.рф
+function generateSignature(params, secretKey) {
+  const sortedParams = Object.keys(params)
+    .filter(key => params[key] !== undefined && params[key] !== null)
+    .sort()
+    .map(key => `${key}=${params[key]}`)
+    .join('&');
+  
+  return crypto.createHash('sha256')
+    .update(sortedParams + secretKey)
+    .digest('hex');
 }
 
 // Вспомогательная функция для генерации пароля
@@ -59,7 +74,7 @@ app.get('/payment-result.html', (req, res) => {
 // Создание платежа для Самозанятый.рф
 app.post('/api/create-payment', async (req, res) => {
   try {
-    const { email, module, promoCode, bonuses, returnUrl } = req.body;
+    const { email, module, promoCode, bonuses } = req.body;
 
     // 1. Валидация данных
     if (!email || !module) {
@@ -79,25 +94,45 @@ app.post('/api/create-payment', async (req, res) => {
       status: 'pending'
     });
 
-    // 4. Перенаправление на страницу Самозанятый.рф
-    const paymentUrl = new URL(SAMOZANATY_CONFIG.paymentUrl);
-    
-    // Параметры для Самозанятый.рф (уточните у них точные названия)
-    paymentUrl.searchParams.append('order_id', orderId);
-    paymentUrl.searchParams.append('amount', finalPrice);
-    paymentUrl.searchParams.append('email', email);
-    paymentUrl.searchParams.append('description', `Оплата модуля ${module}`);
-    paymentUrl.searchParams.append('return_url', returnUrl);
-    paymentUrl.searchParams.append('callback_url', 
-      `${req.protocol}://${req.get('host')}${SAMOZANATY_CONFIG.callbackUrl}`
-    );
+    // 4. Подготовка данных для Самозанятый.рф
+    const paymentParams = {
+      shop_id: SAMOZANATY_CONFIG.shopId,
+      amount: finalPrice * 100, // В копейках
+      currency: 'RUB',
+      order_id: orderId,
+      description: `Оплата модуля ${module}`,
+      email: email,
+      success_url: SAMOZANATY_CONFIG.successUrl,
+      callback_url: SAMOZANATY_CONFIG.callbackUrl
+    };
 
-    // 5. Отправляем URL для перенаправления
+    // 5. Генерация подписи
+    paymentParams.signature = generateSignature(paymentParams, SAMOZANATY_CONFIG.apiKey);
+
+    // 6. Перенаправление на страницу оплаты
+    const paymentFormHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <meta charset="utf-8">
+          <title>Перенаправление на оплату...</title>
+      </head>
+      <body>
+          <form id="paymentForm" action="${SAMOZANATY_CONFIG.paymentUrl}" method="POST">
+              ${Object.entries(paymentParams).map(([key, value]) => `
+                  <input type="hidden" name="${key}" value="${value}">
+              `).join('')}
+          </form>
+          <script>
+              document.getElementById('paymentForm').submit();
+          </script>
+      </body>
+      </html>
+    `;
+
     res.json({
-      success: true,
-      paymentUrl: paymentUrl.toString(),
       orderId: orderId,
-      amount: finalPrice
+      paymentPageHtml: paymentFormHtml
     });
 
   } catch (error) {
@@ -107,15 +142,25 @@ app.post('/api/create-payment', async (req, res) => {
 });
 
 // Вебхук от Самозанятый.рф
-app.post('/api/samozanaty-callback', async (req, res) => {
+app.post('/api/callback', async (req, res) => {
   try {
-    const { order_id, status, amount, signature } = req.body;
+    const { order_id, status, amount, signature, ...otherParams } = req.body;
     
-    // TODO: Добавьте проверку подписи согласно документации Самозанятый.рф
-    // const isValid = verifySamozanatySignature(order_id, amount, signature);
-    // if (!isValid) return res.status(400).end();
+    console.log('Webhook получен:', { order_id, status, amount });
 
-    console.log('Webhook от Самозанятый.рф:', { order_id, status, amount });
+    // Проверяем подпись
+    const receivedSignature = signature;
+    const calculatedSignature = generateSignature({
+      order_id,
+      status,
+      amount,
+      ...otherParams
+    }, SAMOZANATY_CONFIG.apiKey);
+
+    if (receivedSignature !== calculatedSignature) {
+      console.warn('Неверная подпись для заказа:', order_id);
+      return res.status(400).end();
+    }
 
     // Получаем заказ из базы данных
     const order = await db.getOrder(order_id);
@@ -124,7 +169,7 @@ app.post('/api/samozanaty-callback', async (req, res) => {
       return res.status(400).end();
     }
 
-    if (status === 'success' || status === 'succeeded') {
+    if (status === 'succeeded') {
       // Обновляем статус заказа
       await db.updateOrderStatus(order_id, 'succeeded');
       
