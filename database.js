@@ -166,13 +166,13 @@ class Database {
     }
 
     async all(sql, params = []) {
-        return new Promise((resolve, reject) => {
-            this.db.all(sql, params, (err, rows) {
-                if (err) reject(err);
-                else resolve(rows);
-            });
+    return new Promise((resolve, reject) => {
+        this.db.all(sql, params, (err, rows) {
+            if (err) reject(err);
+            else resolve(rows);
         });
-    }
+    });
+}
 
     // Методы для работы с пользователями
     async createUser(email, password) {
@@ -355,3 +355,4 @@ class Database {
 }
 
 module.exports = Database;
+
