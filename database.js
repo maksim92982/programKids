@@ -78,7 +78,7 @@ class Database {
                 amountRUB INTEGER NOT NULL,
                 bonuses INTEGER DEFAULT 0,
                 promoCode TEXT,
-                status TEXT DEFAULT 'processing',
+                status TEXT DEFAULT 'pending',
                 createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
                 updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
             )`,
@@ -167,7 +167,7 @@ class Database {
 
     async all(sql, params = []) {
         return new Promise((resolve, reject) => {
-            this.db.all(sql, params, (err, rows) => {
+            this.db.all(sql, params, (err, rows) {
                 if (err) reject(err);
                 else resolve(rows);
             });
@@ -270,12 +270,17 @@ class Database {
         return true;
     }
 
-    // Методы для работы с заказами
-    async createOrder(orderId, email, module, amountRUB, bonuses = 0, promoCode = null) {
+    // Методы для работы с заказами (ОБНОВЛЕНО)
+    async createOrder(orderData) {
+        const { email, module, amountRUB, bonuses, promoCode, status } = orderData;
+        const orderId = this.generateOrderId();
+        
         await this.run(
-            'INSERT INTO orders (id, email, module, amountRUB, bonuses, promoCode) VALUES (?, ?, ?, ?, ?, ?)',
-            [orderId, email, module, amountRUB, bonuses, promoCode]
+            'INSERT INTO orders (id, email, module, amountRUB, bonuses, promoCode, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [orderId, email, module, amountRUB, bonuses || 0, promoCode || null, status || 'pending']
         );
+        
+        return orderId;
     }
 
     async updateOrderStatus(orderId, status) {
@@ -303,6 +308,15 @@ class Database {
             'UPDATE promo_codes SET usedBy = ?, usedAt = CURRENT_TIMESTAMP WHERE code = ?',
             [usedByEmail, promoCode]
         );
+        
+        // Начисляем бонусы владельцу промокода
+        const promo = await this.checkPromoCode(promoCode);
+        if (promo && promo.userId) {
+            await this.run(
+                'UPDATE users SET bonusBalance = bonusBalance + 500 WHERE id = ?',
+                [promo.userId]
+            );
+        }
     }
 
     // Методы для работы с администраторами
@@ -321,6 +335,12 @@ class Database {
             result += chars.charAt(Math.floor(Math.random() * chars.length));
         }
         return result;
+    }
+
+    generateOrderId() {
+        const timestamp = Date.now().toString(36);
+        const random = Math.random().toString(36).substr(2, 5);
+        return `order_${timestamp}_${random}`;
     }
 
     async close() {
