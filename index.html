@@ -2,7 +2,11 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="frame-src https://player.vimeo.com https://vk.com https://vimeo.com 'self'">
+    <meta http-equiv="Content-Security-Policy" content="
+  frame-src https://player.vimeo.com https://vk.com https://vimeo.com 'self' https://самозанятые.рф;
+  script-src 'self' 'unsafe-eval' https://самозанятые.рф;
+  default-src 'self' https://самозанятые.рф;
+">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
 
@@ -2193,6 +2197,7 @@ function showPurchaseModal(moduleName, bonusBalance) {
 
 }
 </script>
+
 
 
 
