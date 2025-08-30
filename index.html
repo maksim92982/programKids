@@ -2064,10 +2064,11 @@ document.getElementById('cancel-purchase').addEventListener('click', function(e)
 });
 
 // Обработчик формы покупки
+// Обработчик формы покупки
 document.getElementById('purchase-form').addEventListener('submit', async function(e) {
   e.preventDefault();
 
-  const email     = document.getElementById('purchase-email').value.trim();
+  const email = document.getElementById('purchase-email').value.trim();
   const moduleVal = document.getElementById('purchase-module').value;
   const promoCode = (document.getElementById('promo-code').value || '').trim();
 
@@ -2085,19 +2086,20 @@ document.getElementById('purchase-form').addEventListener('submit', async functi
         email,
         module: moduleVal,
         promoCode,
-        bonuses: 0,            // здесь бонусы не используются
+        bonuses: 0,
         returnUrl: RETURN_URL
       })
     });
 
     if (!resp.ok) throw new Error('Ошибка создания платежа');
-    const { orderId, paymentPageHtml } = await resp.json();
+    const result = await resp.json();
 
-    // Открываем HTML платёжной страницы, полученный от Сам.Эквайринга
-    const w = window.open('', '_self'); // можно _blank если хочешь в новой вкладке
-    w.document.open();
-    w.document.write(paymentPageHtml);
-    w.document.close();
+    if (result.success) {
+      // Перенаправляем на страницу Самозанятый.рф
+      window.location.href = result.paymentUrl;
+    } else {
+      alert('Ошибка: ' + (result.error || 'Не удалось создать платеж'));
+    }
   } catch (err) {
     console.error(err);
     alert('Не удалось перейти к оплате. Попробуйте позже.');
@@ -2198,6 +2200,7 @@ function showPurchaseModal(moduleName, bonusBalance) {
 
 }
 </script>
+
 
 
 
