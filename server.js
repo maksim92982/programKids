@@ -40,7 +40,14 @@ async function calcFinalPriceRUB({ module, promoCode, bonuses }) {
 function sha256hex(str) {
   return crypto.createHash('sha256').update(str, 'utf8').digest('hex');
 }
+// Добавь этот маршрут в server.js
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/index.html');
+});
 
+app.get('/payment-result.html', (req, res) => {
+  res.sendFile(__dirname + '/payment-result.html');
+});
 // Создание платежа
 app.post('/api/create-payment', async (req, res) => {
   try {
@@ -350,3 +357,4 @@ process.on('SIGTERM', async () => {
   await db.close();
   process.exit(0);
 });
+
