@@ -49,11 +49,7 @@ app.get('/payment-result.html', (req, res) => {
   res.sendFile(__dirname + '/payment-result.html');
 });
 // Создание платежа
-<meta http-equiv="Content-Security-Policy" content="
-  frame-src https://player.vimeo.com https://vk.com https://vimeo.com 'self';
-  script-src 'self' 'unsafe-eval';
-  default-src 'self';
-">
+
 
 // Вебхук от Сам.Эквайринга
 app.post('/api/callback', async (req, res) => {
@@ -308,6 +304,7 @@ process.on('SIGTERM', async () => {
   await db.close();
   process.exit(0);
 });
+
 
 
 
