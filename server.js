@@ -1,7 +1,7 @@
 // npm i express axios body-parser crypto cors sqlite3
 const express = require('express');
 const axios = require('axios');
-const crypto = require('crypto');
+const crypto = require('rypto');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const Database = require('./database');
@@ -11,13 +11,11 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// === Конфиг магазина ===
-const SHOP = {
-  apiKey: process.env.SELFWORK_API_KEY || 'lJQHoFADBvSC8KedJf511nufkhg592ud',
-  origin: process.env.SHOP_ORIGIN || 'https://test-shop.ru/',
-  referer: process.env.SHOP_REFERER || 'test-shop.ru',
-  // Белые IP Сам.Эквайринга:
-  ipAllow: new Set(['178.205.169.35', '81.23.144.157'])
+// === Конфиг для Самозанятый.рф ===
+const SAMOZANATY_CONFIG = {
+  paymentUrl: 'https://самозанятый.рф/payment',
+  apiKey: process.env.SAMOZANATY_API_KEY || 'your_samozanaty_api_key',
+  callbackUrl: process.env.CALLBACK_URL || '/api/samozanaty-callback'
 };
 
 // Инициализация базы данных
@@ -34,11 +32,6 @@ async function calcFinalPriceRUB({ module, promoCode, bonuses }) {
   const promo = promoCode ? 500 : 0;
   const useBonus = Math.min(bonuses || 0, Math.max(base - promo, 0));
   return Math.max(base - promo - useBonus, 0);
-}
-
-// Вспомогалка подписи
-function sha256hex(str) {
-  return crypto.createHash('sha256').update(str, 'utf8').digest('hex');
 }
 
 // Вспомогательная функция для генерации пароля
@@ -63,7 +56,7 @@ app.get('/payment-result.html', (req, res) => {
   res.sendFile(__dirname + '/payment-result.html');
 });
 
-// Создание платежа (ДОБАВЛЕНО)
+// Создание платежа для Самозанятый.рф
 app.post('/api/create-payment', async (req, res) => {
   try {
     const { email, module, promoCode, bonuses, returnUrl } = req.body;
@@ -77,57 +70,34 @@ app.post('/api/create-payment', async (req, res) => {
     const finalPrice = await calcFinalPriceRUB({ module, promoCode, bonuses });
 
     // 3. Создание заказа в базе данных
-const orderId = await db.createOrder({
-    email,
-    module,
-    amountRUB: finalPrice,
-    bonuses: bonuses || 0,
-    promoCode: promoCode || null,
-    status: 'pending'
-});
+    const orderId = await db.createOrder({
+      email,
+      module,
+      amountRUB: finalPrice,
+      bonuses: bonuses || 0,
+      promoCode: promoCode || null,
+      status: 'pending'
+    });
 
-    // 4. Подготовка данных для Сам.Эквайринга
-    const orderData = {
-      order_id: orderId,
-      amount: finalPrice,
-      currency: 'RUB',
-      client_email: email,
-      return_url: returnUrl,
-      // Другие необходимые параметры согласно документации Сам.Эквайринга
-    };
+    // 4. Перенаправление на страницу Самозанятый.рф
+    const paymentUrl = new URL(SAMOZANATY_CONFIG.paymentUrl);
+    
+    // Параметры для Самозанятый.рф (уточните у них точные названия)
+    paymentUrl.searchParams.append('order_id', orderId);
+    paymentUrl.searchParams.append('amount', finalPrice);
+    paymentUrl.searchParams.append('email', email);
+    paymentUrl.searchParams.append('description', `Оплата модуля ${module}`);
+    paymentUrl.searchParams.append('return_url', returnUrl);
+    paymentUrl.searchParams.append('callback_url', 
+      `${req.protocol}://${req.get('host')}${SAMOZANATY_CONFIG.callbackUrl}`
+    );
 
-    // 5. Генерация подписи
-    const signatureData = `${orderData.order_id}${orderData.amount}${SHOP.apiKey}`;
-    orderData.signature = sha256hex(signatureData);
-
-    // 6. Отправка формы в Сам.Эквайринг
-    const paymentFormHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-          <meta charset="utf-8">
-          <title>Перенаправление на оплату...</title>
-      </head>
-      <body>
-          <form id="paymentForm" action="https://3dsec.sberbank.ru/payment/merchants/sbersafe_sberid/payment_ru.html" method="POST">
-              <input type="hidden" name="order_id" value="${orderData.order_id}">
-              <input type="hidden" name="amount" value="${orderData.amount}">
-              <input type="hidden" name="currency" value="${orderData.currency}">
-              <input type="hidden" name="client_email" value="${orderData.client_email}">
-              <input type="hidden" name="return_url" value="${orderData.return_url}">
-              <input type="hidden" name="signature" value="${orderData.signature}">
-          </form>
-          <script>
-              document.getElementById('paymentForm').submit();
-          </script>
-      </body>
-      </html>
-    `;
-
-    // 7. Отправляем HTML с формой оплаты
+    // 5. Отправляем URL для перенаправления
     res.json({
+      success: true,
+      paymentUrl: paymentUrl.toString(),
       orderId: orderId,
-      paymentPageHtml: paymentFormHtml
+      amount: finalPrice
     });
 
   } catch (error) {
@@ -136,21 +106,16 @@ const orderId = await db.createOrder({
   }
 });
 
-// Вебхук от Сам.Эквайринга
-app.post('/api/callback', async (req, res) => {
+// Вебхук от Самозанятый.рф
+app.post('/api/samozanaty-callback', async (req, res) => {
   try {
-    const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress;
+    const { order_id, status, amount, signature } = req.body;
     
-    const data = req.body;
-    const { order_id, status, amount, signature } = data || {};
-    if (!order_id || !amount || !signature) return res.status(400).end();
+    // TODO: Добавьте проверку подписи согласно документации Самозанятый.рф
+    // const isValid = verifySamozanatySignature(order_id, amount, signature);
+    // if (!isValid) return res.status(400).end();
 
-    // Проверяем подпись уведомления
-    const calc = sha256hex(`${order_id}${amount}${SHOP.apiKey}`);
-    if (calc !== signature) {
-      console.warn('Bad signature for', order_id);
-      return res.status(400).end();
-    }
+    console.log('Webhook от Самозанятый.рф:', { order_id, status, amount });
 
     // Получаем заказ из базы данных
     const order = await db.getOrder(order_id);
@@ -159,7 +124,7 @@ app.post('/api/callback', async (req, res) => {
       return res.status(400).end();
     }
 
-    if (status === 'succeeded') {
+    if (status === 'success' || status === 'succeeded') {
       // Обновляем статус заказа
       await db.updateOrderStatus(order_id, 'succeeded');
       
@@ -375,5 +340,3 @@ process.on('SIGTERM', async () => {
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log('Server started on ' + PORT));
-
-
