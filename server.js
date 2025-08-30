@@ -71,6 +71,7 @@ app.get('/payment-result.html', (req, res) => {
 });
 
 // Создание платежа для Самозанятый.рф
+// Создание платежа для Самозанятый.рф
 app.post('/api/create-payment', async (req, res) => {
   try {
     const { email, module, promoCode, bonuses } = req.body;
@@ -93,45 +94,47 @@ app.post('/api/create-payment', async (req, res) => {
       status: 'pending'
     });
 
-    // 4. Подготовка данных для Самозанятый.рф
-    const paymentParams = {
-      shop_id: SAMOZANATY_CONFIG.shopId,
-      amount: finalPrice * 100, // В копейках
-      currency: 'RUB',
-      order_id: orderId,
-      description: `Оплата модуля ${module}`,
-      email: email,
-      success_url: SAMOZANATY_CONFIG.successUrl,
-      callback_url: SAMOZANATY_CONFIG.callbackUrl
-    };
+    // 4. Получить данные модуля для информации о товаре
+    const moduleData = await db.getContentByModule(module);
+    const moduleTitle = moduleData ? moduleData.title : `Модуль ${module}`;
 
-    // 5. Генерация подписи
-    paymentParams.signature = generateSignature(paymentParams, SAMOZANATY_CONFIG.apiKey);
+    // 5. Подготовка данных для Самозанятый.рф (формат x-www-form-urlencoded)
+    const paymentParams = new URLSearchParams();
+    paymentParams.append('order_id', orderId);
+    paymentParams.append('amount', finalPrice * 100); // В копейках
+    paymentParams.append('info[0][name]', moduleTitle);
+    paymentParams.append('info[0][quantity]', '1');
+    paymentParams.append('info[0][amount]', finalPrice * 100); // В копейках
 
-    // 6. Перенаправление на страницу оплаты
-    const paymentFormHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-          <meta charset="utf-8">
-          <title>Перенаправление на оплату...</title>
-      </head>
-      <body>
-          <form id="paymentForm" action="${SAMOZANATY_CONFIG.paymentUrl}" method="POST">
-              ${Object.entries(paymentParams).map(([key, value]) => `
-                  <input type="hidden" name="${key}" value="${value}">
-              `).join('')}
-          </form>
-          <script>
-              document.getElementById('paymentForm').submit();
-          </script>
-      </body>
-      </html>
-    `;
+    // 6. Генерация подписи (по их спецификации)
+    const signatureData = [
+      orderId,
+      (finalPrice * 100).toString(),
+      moduleTitle,
+      '1',
+      (finalPrice * 100).toString(),
+      SAMOZANATY_CONFIG.apiKey
+    ].join('');
 
+    const signature = crypto.createHash('sha256')
+      .update(signatureData)
+      .digest('hex');
+
+    paymentParams.append('signature', signature);
+
+    // 7. Отправка запроса к платежному шлюзу
+    const response = await axios.post(SAMOZANATY_CONFIG.paymentUrl, paymentParams, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Origin': 'https://program-kids.vercel.app',
+        'Referer': 'program-kids.vercel.app'
+      }
+    });
+
+    // 8. Возвращаем HTML страницу оплаты клиенту
     res.json({
       orderId: orderId,
-      paymentPageHtml: paymentFormHtml
+      paymentPageHtml: response.data
     });
 
   } catch (error) {
@@ -384,6 +387,7 @@ process.on('SIGTERM', async () => {
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log('Server started on ' + PORT));
+
 
 
 
