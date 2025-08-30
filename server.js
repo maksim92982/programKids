@@ -13,11 +13,11 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // === Конфиг для Самозанятый.рф ===
 const SAMOZANATY_CONFIG = {
-  paymentUrl: 'https://pay.samozanaty.ru/payment', // Основной URL платежей
-  apiKey: 'lJQHoFADBvSC8KedJf511nufkhg592ud', // Ваш API ключ
-  shopId: '0a030f501', // ID магазина
-  successUrl: 'https://test-shop.ru/', // URL после успешной оплаты
-  callbackUrl: 'https://test-shop.ru/api/callback' // URL для уведомлений
+  paymentUrl: 'https://pay.samozanaty.ru/payment',
+  apiKey: 'lJQHoFADBvSC8KedJf511nufkhg592ud',
+  shopId: '0a030f501', // Ваш ID магазина
+  successUrl: 'https://program-kids.vercel.app/payment-result.html', // URL после успешной оплаты
+  callbackUrl: 'https://program-kids.vercel.app/api/callback' // URL для уведомлений
 };
 
 // Инициализация базы данных
@@ -385,3 +385,4 @@ process.on('SIGTERM', async () => {
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log('Server started on ' + PORT));
+
