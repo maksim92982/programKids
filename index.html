@@ -1182,7 +1182,44 @@ html, body {
 </div>
     </body> 
     <script>
+// Обработчик хэша при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    // Проверяем все возможные хэши
+    const hash = window.location.hash;
+    
+    if (hash === '#agreement') {
+        showAgreementPage();
+    } else if (hash === '#pricing-page') {
+        showPricingPage();
+    } else if (hash === '#admin-page') {
+        showSection('admin-page');
+    } else if (hash === '#dashboard-page') {
+        showSection('dashboard-page');
+    } else {
+        // По умолчанию показываем главную страницу
+        showSection('first-page');
+    }
+});
 
+// Функция показа страницы с договором
+function showAgreementPage() {
+    // Скрываем все другие секции
+    document.querySelectorAll('.page-section').forEach(section => {
+        section.classList.remove('active-section');
+    });
+    
+    // Показываем секцию с договором
+    const agreementSection = document.getElementById('agreement-page');
+    if (agreementSection) {
+        agreementSection.classList.add('active-section');
+        window.scrollTo(0, 0);
+    }
+}
+
+// Функция для получения полной ссылки на договор
+function getAgreementLink() {
+    return window.location.origin + '/#agreement';
+}
         // Обработчик для открытия страницы договора
 document.addEventListener('DOMContentLoaded', function() {
     // Проверяем хэш в URL и показываем договор при необходимости
@@ -2558,6 +2595,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ====== Конец файла ======
 </script>
+
 
 
 
