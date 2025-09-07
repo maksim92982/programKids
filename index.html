@@ -1061,6 +1061,48 @@ html, body {
 </div>
     </body> 
     <script>
+// Функция показа страницы тарифов
+function showPricingPage() {
+    showSection('pricing-page');
+    loadPricingModules();
+}
+
+// Загрузка модулей для страницы тарифов
+async function loadPricingModules() {
+    try {
+        const modulesList = document.getElementById('pricing-modules-list');
+        modulesList.innerHTML = '<div class="loading">Загрузка тарифов...</div>';
+        
+        // Загружаем модули из API
+        const response = await fetch('/api/content');
+        if (!response.ok) throw new Error('Ошибка загрузки');
+        
+        const modules = await response.json();
+        
+        if (modules.length === 0) {
+            modulesList.innerHTML = '<div class="loading">Модули не найдены</div>';
+            return;
+        }
+        
+        // Отображаем модули
+        modulesList.innerHTML = '';
+        modules.forEach(module => {
+            const moduleCard = document.createElement('div');
+            moduleCard.className = 'module-card-pricing';
+            moduleCard.innerHTML = `
+                <h3>Модуль ${module.module}</h3>
+                <div class="module-description">${module.title}</div>
+                <div class="module-price">${module.price || 3000} рублей</div>
+            `;
+            modulesList.appendChild(moduleCard);
+        });
+        
+    } catch (error) {
+        console.error('Ошибка загрузки тарифов:', error);
+        document.getElementById('pricing-modules-list').innerHTML = 
+            '<div class="loading">Ошибка загрузки тарифов</div>';
+    }
+}
 // === Конфиг фронта ===
 const API_BASE = '/api';
 const RETURN_URL = location.origin + '/payment-result.html';
@@ -1432,48 +1474,7 @@ loginAdmin: function (email, password) {
         return password;
     }
 };
-// Функция показа страницы тарифов
-function showPricingPage() {
-    showSection('pricing-page');
-    loadPricingModules();
-}
 
-// Загрузка модулей для страницы тарифов
-async function loadPricingModules() {
-    try {
-        const modulesList = document.getElementById('pricing-modules-list');
-        modulesList.innerHTML = '<div class="loading">Загрузка тарифов...</div>';
-        
-        // Загружаем модули из API
-        const response = await fetch('/api/content');
-        if (!response.ok) throw new Error('Ошибка загрузки');
-        
-        const modules = await response.json();
-        
-        if (modules.length === 0) {
-            modulesList.innerHTML = '<div class="loading">Модули не найдены</div>';
-            return;
-        }
-        
-        // Отображаем модули
-        modulesList.innerHTML = '';
-        modules.forEach(module => {
-            const moduleCard = document.createElement('div');
-            moduleCard.className = 'module-card-pricing';
-            moduleCard.innerHTML = `
-                <h3>Модуль ${module.module}</h3>
-                <div class="module-description">${module.title}</div>
-                <div class="module-price">${module.price || 3000} рублей</div>
-            `;
-            modulesList.appendChild(moduleCard);
-        });
-        
-    } catch (error) {
-        console.error('Ошибка загрузки тарифов:', error);
-        document.getElementById('pricing-modules-list').innerHTML = 
-            '<div class="loading">Ошибка загрузки тарифов</div>';
-    }
-}
 
 // Добавьте в навигационные вкладки (для разработки)
 document.querySelector('.nav-tabs').innerHTML += 
@@ -2377,6 +2378,7 @@ function showPurchaseModal(moduleName, bonusBalance) {
 
 }
 </script>
+
 
 
 
