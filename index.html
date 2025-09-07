@@ -48,7 +48,7 @@
     padding: 20px;
 }
 
-.pricing-description {
+.pricing-deion {
     text-align: center;
     margin-bottom: 30px;
     color: #555;
@@ -81,7 +81,7 @@
     margin: 15px 0;
 }
 
-.module-description {
+.module-deion {
     color: #666;
     line-height: 1.5;
 }
@@ -1043,7 +1043,7 @@ html, body {
         
         <main>
             <div class="pricing-container">
-                <div class="pricing-description">
+                <div class="pricing-deion">
                     <p>Выберите подходящий модуль для изучения программирования. После оплаты доступ предоставляется навсегда.</p>
                 </div>
                 
@@ -1432,7 +1432,52 @@ loginAdmin: function (email, password) {
         return password;
     }
 };
+// Функция показа страницы тарифов
+function showPricingPage() {
+    showSection('pricing-page');
+    loadPricingModules();
+}
 
+// Загрузка модулей для страницы тарифов
+async function loadPricingModules() {
+    try {
+        const modulesList = document.getElementById('pricing-modules-list');
+        modulesList.innerHTML = '<div class="loading">Загрузка тарифов...</div>';
+        
+        // Загружаем модули из API
+        const response = await fetch('/api/content');
+        if (!response.ok) throw new Error('Ошибка загрузки');
+        
+        const modules = await response.json();
+        
+        if (modules.length === 0) {
+            modulesList.innerHTML = '<div class="loading">Модули не найдены</div>';
+            return;
+        }
+        
+        // Отображаем модули
+        modulesList.innerHTML = '';
+        modules.forEach(module => {
+            const moduleCard = document.createElement('div');
+            moduleCard.className = 'module-card-pricing';
+            moduleCard.innerHTML = `
+                <h3>Модуль ${module.module}</h3>
+                <div class="module-description">${module.title}</div>
+                <div class="module-price">${module.price || 3000} рублей</div>
+            `;
+            modulesList.appendChild(moduleCard);
+        });
+        
+    } catch (error) {
+        console.error('Ошибка загрузки тарифов:', error);
+        document.getElementById('pricing-modules-list').innerHTML = 
+            '<div class="loading">Ошибка загрузки тарифов</div>';
+    }
+}
+
+// Добавьте в навигационные вкладки (для разработки)
+document.querySelector('.nav-tabs').innerHTML += 
+    '<div class="nav-tab" data-target="pricing-page">Тарифы</div>';
 // Общие функции для навигации
 function showSection(sectionId) {
     document.querySelectorAll('.page-section').forEach(section => {
@@ -2332,6 +2377,7 @@ function showPurchaseModal(moduleName, bonusBalance) {
 
 }
 </script>
+
 
 
 
