@@ -852,7 +852,24 @@ html, body {
             </main>
         </div>
     </div>
-
+<!-- Страница договора -->
+<div id="agreement-page" class="page-section">
+    <div class="container">
+        <header>
+            <h1>Договор об оказании услуг</h1>
+            <button class="back-button" onclick="history.back()">← Назад</button>
+        </header>
+        
+        <main>
+            <div class="contract-content">
+                <!-- Здесь разместите текст вашего договора -->
+                <h3>1. Предмет договора</h3>
+                <p>Текст договора...</p>
+                <!-- И так далее -->
+            </div>
+        </main>
+    </div>
+</div>
     <!-- Личный кабинет -->
     <div id="dashboard-page" class="page-section">
         <div class="container">
@@ -1081,7 +1098,7 @@ html, body {
             <div class="form-group checkbox">
                 <input type="checkbox" id="accept-agreement" required>
                 <label for="accept-agreement">
-                    Я принимаю условия <a href="#" id="contract-link" class="contract-link">договора</a>
+                    Я принимаю условия <a href="#agreement" target="_blank" class="contract-link">договора</a>
                 </label>
             </div>
             
@@ -1165,6 +1182,34 @@ html, body {
 </div>
     </body> 
     <script>
+
+        // Обработчик для открытия страницы договора
+document.addEventListener('DOMContentLoaded', function() {
+    // Проверяем хэш в URL и показываем договор при необходимости
+    if (window.location.hash === '#agreement') {
+        showAgreementPage();
+    }
+});
+
+// Функция показа страницы с договором
+function showAgreementPage() {
+    // Скрываем все другие секции
+    document.querySelectorAll('.page-section').forEach(section => {
+        section.classList.remove('active-section');
+    });
+    
+    // Показываем секцию с договором (нужно создать такую секцию)
+    const agreementSection = document.getElementById('agreement-page');
+    if (agreementSection) {
+        agreementSection.classList.add('active-section');
+        window.scrollTo(0, 0);
+    }
+}
+
+// Функция для получения ссылки на договор
+function getAgreementLink() {
+    return window.location.origin + '/#agreement';
+}
 // Функция показа страницы тарифов
 function showPricingPage() {
     showSection('pricing-page');
@@ -2513,6 +2558,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ====== Конец файла ======
 </script>
+
 
 
 
