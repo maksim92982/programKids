@@ -2377,7 +2377,35 @@ function showPurchaseModal(moduleName, bonusBalance) {
 });
 
 }
+// ====== Функции для работы с тарифами ======
+
+// Функция для получения ссылки на тарифы
+function getPricingLink() {
+    return window.location.origin + '/#pricing-page';
+}
+
+// Обработка глубоких ссылок при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    // Проверяем хэш в URL и показываем нужную страницу
+    if (window.location.hash === '#pricing-page') {
+        showPricingPage();
+    }
+    
+    // Проверяем другие хэши (опционально)
+    if (window.location.hash === '#admin-page') {
+        showSection('admin-page');
+    }
+    if (window.location.hash === '#dashboard-page') {
+        showSection('dashboard-page');
+    }
+    
+    // Выводим ссылку в консоль для удобства
+    console.log('Ссылка на тарифы для договора:', getPricingLink());
+});
+
+// ====== Конец файла ======
 </script>
+
 
 
 
