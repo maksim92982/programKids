@@ -17,6 +17,60 @@
     
     <title>Обучающая платформа</title>
     <style>
+.contract-link {
+    color: #3498db;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.contract-link:hover {
+    color: #2980b9;
+}
+/* Стили для секции договора */
+.contract-section {
+    margin-top: 40px;
+    padding: 25px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #4a6fa5;
+}
+
+.contract-section h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.contract-content {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 15px;
+    background: white;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.contract-content h3 {
+    color: #4a6fa5;
+    margin: 20px 0 10px 0;
+}
+
+.contract-content p {
+    margin-bottom: 10px;
+    line-height: 1.5;
+    color: #555;
+}
+
+.contract-link {
+    color: #3498db;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.contract-link:hover {
+    color: #2980b9;
+}
+        
 .pricing-link-section {
     background: white;
     padding: 40px 20px;
@@ -977,13 +1031,26 @@ html, body {
     </div>
     <section class="pricing-link-section">
     <div class="container">
-        <h2>Тарифы и условия</h2>
-        <p>Ознакомьтесь с подробными тарифами и условиями оказания услуг</p>
-        <a href="#" onclick="showPricingPage(); return false;" class="pricing-link">
-            Посмотреть тарифы →
-        </a>
-    </div>
-</section>
+            <h2>Тарифы и условия</h2>
+            <p>Ознакомьтесь с подробными тарифами и условиями оказания услуг</p>
+            <a href="#" onclick="showPricingPage(); return false;" class="pricing-link">
+                Посмотреть тарифы →
+            </a>
+        </div>
+    </section>
+
+    <!-- ДОБАВЬТЕ ЭТОТ ФУТЕР -->
+    <footer style="text-align: center; padding: 30px 20px; background: #f8f9fa; margin-top: 40px;">
+        <div class="container">
+            <p style="margin: 0; color: #666; font-size: 14px;">
+                © 2024 Программирование для начинающих. 
+                <a href="#" onclick="showPricingPage(); return false;" 
+                   style="color: #4a6fa5; text-decoration: none; margin-left: 15px;">
+                    Договор оферты
+                </a>
+            </p>
+        </div>
+    </footer>
 </div>
     <!-- Навигационные вкладки (для разработки) -->
     <div class="nav-tabs">
@@ -993,7 +1060,6 @@ html, body {
         <div class="nav-tab" data-target="admin-page">Админка</div>
     </div>
     <!-- Модальное окно покупки -->
-<!-- Модальное окно покупки -->
 <!-- Модальное окно покупки -->
 <div id="purchase-modal" class="purchase-modal" style="display: none;">
     <div class="purchase-modal-content">
@@ -1012,13 +1078,18 @@ html, body {
                 </select>
             </div>
             
-            
+            <div class="form-group checkbox">
+                <input type="checkbox" id="accept-agreement" required>
+                <label for="accept-agreement">
+                    Я принимаю условия <a href="#" id="contract-link" class="contract-link">договора</a>
+                </label>
+            </div>
             
             <div class="form-group">
                 <label for="promo-code">Промокод (если есть):</label>
-                <div style="display: flex; align-items: center;">
-                    <input type="text" id="promo-code" style="flex: 1;">
-                    <button type="button" id="apply-promo" style="margin-left: 10px; display: none;">Применить</button>
+                <div class="promo-container">
+                    <input type="text" id="promo-code">
+                    <button type="button" id="apply-promo">Применить</button>
                 </div>
             </div>
             
@@ -1051,6 +1122,39 @@ html, body {
                     <!-- Модули будут загружены динамически -->
                     <div class="loading">Загрузка тарифов...</div>
                 </div>
+
+<!-- ДОБАВЬТЕ ЭТУ СЕКЦИЮ С ДОГОВОРОМ -->
+                <div class="contract-section">
+                    <h2>Договор об оказании услуг (публичная оферта)</h2>
+                    <div class="contract-content">
+                        <p>Александров Максим Антонович, плательщик налога на профессиональный доход (далее — Исполнитель) настоящей публичной офертой предлагает любому физическому или юридическому лицу, а также индивидуальному предпринимателю (далее – Заказчик) заключить настоящий договор об оказании услуг на указанных ниже условиях.</p>
+
+                        <h3>1. Термины и определения</h3>
+                        <p>1.1 Договор — настоящий договор об оказании услуг, постоянно опубликованный на сайте Исполнителя по адресу: https://program-kids.vercel.app/.</p>
+                        <p>1.2. Акцепт Договора — принятие публичной оферты Заказчиком на заключение Договора. Акцептом Договора считается нажатие Заказчиком кнопки «Оплатить» под сформированным заказом на сайте https://program-kids.vercel.app/. Полным и безусловным акцептом Договора является осуществление Заказчиком оплаты предложенных Исполнителем услуг.</p>
+                        <p>1.3. Тарифы — перечень услуг Исполнителя с ценами, указанными в Прайс-листе на сайте Исполнителя по адресу https://program-kids.vercel.app/#pricing-page.</p>
+
+                        <h3>2. Предмет Договора</h3>
+                        <p>2.1. В соответствии с Договором Заказчик поручает и оплачивает, а Исполнитель принимает на себя обязательства по оказанию Заказчику услуг, выбранных Заказчиком.</p>
+                        <p>2.2. Перечень услуг содержится в Тарифах.</p>
+                        <p>2.3. Заказчик соглашается, что совершая Акцепт Договора он подтверждает, что ознакомлен, согласен, полностью и безоговорочно принимает все условия Договора.</p>
+
+                        <!-- Добавьте остальные пункты договора здесь -->
+                        <p>... [остальные пункты договора] ...</p>
+
+                        <h3>РЕКВИЗИТЫ ИСПОЛНИТЕЛЯ:</h3>
+                        <p>Александров Максим Антонович<br>
+                        Адрес: Ленинградская область, Всеволожский р-н, г. Бугры, Петровский бульвар 25<br>
+                        ИНН 781699019604<br>
+                        ОГРНИП ___________<br>
+                        Р/с: ____________<br>
+                        Банк: _____________<br>
+                        К/с: ____________<br>
+                        БИК: ____________<br>
+                        Адрес электронной почты: ma89spb@gmail.com</p>
+                    </div>
+                </div>
+
                 
                 <div class="pricing-footer">
                     <p>Вопросы? Пишите на: <a href="mailto:support@program-kids.ru">support@program-kids.ru</a></p>
@@ -2248,7 +2352,11 @@ document.getElementById('cancel-purchase').addEventListener('click', function(e)
 // Обработчик формы покупки
 document.getElementById('purchase-form').addEventListener('submit', async function(e) {
   e.preventDefault();
-
+// Проверяем принятие договора
+    if (!document.getElementById('accept-agreement').checked) {
+        alert('Для продолжения необходимо принять условия договора');
+        return;
+    }
   const email = document.getElementById('purchase-email').value.trim();
   const moduleVal = document.getElementById('purchase-module').value;
   const promoCode = (document.getElementById('promo-code').value || '').trim();
@@ -2405,6 +2513,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ====== Конец файла ======
 </script>
+
 
 
 
