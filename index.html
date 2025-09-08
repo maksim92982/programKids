@@ -1098,7 +1098,7 @@ html, body {
             <div class="form-group checkbox">
     <input type="checkbox" id="accept-agreement" required>
     <label for="accept-agreement">
-        Я принимаю условия <a href="/agreement.html" target="_blank" rel="noopener noreferrer">договора</a>
+        Я принимаю условия <a href="#contract-section" target="_blank" rel="noopener noreferrer">договора</a>
     </label>
 </div>
             
@@ -1183,6 +1183,7 @@ html, body {
     </body> 
     <script>
 // Обработчик хэша при загрузке страницы
+// Обработчик хэша при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     // Проверяем все возможные хэши
     const hash = window.location.hash;
@@ -1191,6 +1192,15 @@ document.addEventListener('DOMContentLoaded', function() {
         showAgreementPage();
     } else if (hash === '#pricing-page') {
         showPricingPage();
+    } else if (hash === '#contract-section') {
+        showPricingPage();
+        // Прокручиваем к договору после загрузки
+        setTimeout(() => {
+            const contractSection = document.getElementById('contract-section');
+            if (contractSection) {
+                contractSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, 500);
     } else if (hash === '#admin-page') {
         showSection('admin-page');
     } else if (hash === '#dashboard-page') {
@@ -2595,6 +2605,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ====== Конец файла ======
 </script>
+
 
 
 
