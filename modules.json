@@ -1,0 +1,20 @@
+{
+  "modules": [
+    {
+      "id": 1,
+      "module": "A1",
+      "title": "Базовые понятия",
+      "videoUrl": "https://vimeo.com/1096940811/313e75f168",
+      "videoType": "vimeo",
+      "price": 3000
+    },
+    {
+      "id": 2,
+      "module": "A2",
+      "title": "Продвинутые техники",
+      "videoUrl": "https://vimeo.com/1091471583",
+      "videoType": "vimeo",
+      "price": 3000
+    }
+  ]
+}
