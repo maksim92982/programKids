@@ -4,17 +4,15 @@
       "id": 1,
       "module": "A1",
       "title": "Базовые понятия",
-      "videoUrl": "https://vimeo.com/1096940811/313e75f168",
-      "videoType": "vimeo",
-      "price": 3000
+      "videoType": "direct",
+      "videoUrl": "https://vimeo.com/1091471613/1efd5536bb"
     },
     {
       "id": 2,
-      "module": "A2",
-      "title": "Продвинутые техники",
-      "videoUrl": "https://vimeo.com/1091471583",
+      "module": "Б2",
+      "videoUrl": "https://vimeo.com/1096940811/313e75f168",
       "videoType": "vimeo",
-      "price": 3000
+      "price": 30000
     }
   ]
 }
