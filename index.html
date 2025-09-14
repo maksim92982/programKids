@@ -1150,6 +1150,7 @@ html, body {
                                 <button type="submit">Сохранить настройки</button>
                                 <button type="button" id="test-github-connection">Проверить подключение</button>
                                 <button type="button" id="sync-to-github" style="background: #17a2b8; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">🔄 Синхронизировать</button>
+                                <button type="button" id="setup-github-defaults" style="background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">⚙️ Настроить по умолчанию</button>
                             </div>
                         </form>
                         <div id="github-status"></div>
@@ -1613,53 +1614,58 @@ async function forceLoadPricingModules() {
         console.error('Ошибка при загрузке из GitHub API:', githubError);
     }
     
-    // Если ничего не сработало, используем хардкод модулей
-    console.log('Используем хардкод модулей как последний fallback');
-    const modules = [
-        {
-            id: 1,
-            module: "A1",
-            title: "Базовые понятия",
-            videoType: "direct",
-            videoUrl: "https://vimeo.com/1091471613/1efd5536bb"
-        },
-        {
-            id: 2,
-            module: "Б2",
-            videoUrl: "https://vimeo.com/1096940811/313e75f168",
-            videoType: "vimeo",
-            price: 30000
-        },
-        {
-            id: 3,
-            module: "А3",
-            videoUrl: "https://vimeo.com/1096940811/313e75f168",
-            videoType: "vimeo",
-            price: 30000
-        },
-        {
-            id: 4,
-            module: "А9",
-            videoUrl: "https://vimeo.com/1096940811/313e75f168",
-            videoType: "vimeo",
-            price: 11000
+    // Если ничего не сработало, пробуем raw GitHub
+    console.log('Пробуем загрузить из raw GitHub...');
+    try {
+        const githubSettings = getGithubSettings();
+        const username = githubSettings.username || 'ma89spb';
+        const repo = githubSettings.repo || 'programKids-main';
+        const rawGithubUrl = `https://raw.githubusercontent.com/${username}/${repo}/main/modules.json`;
+        console.log('Загружаем из raw GitHub:', rawGithubUrl);
+        
+        const response = await fetch(rawGithubUrl, {
+            method: 'GET',
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const modules = data.modules || [];
+            console.log('Загружены модули из raw GitHub:', modules);
+            console.log('Количество модулей из raw GitHub:', modules.length);
+            
+            if (modules.length > 0) {
+                // Отображаем модули
+                modulesList.innerHTML = '';
+                modules.forEach((module, index) => {
+                    console.log(`Создаем карточку для модуля ${index + 1}:`, module);
+                    const moduleCard = document.createElement('div');
+                    moduleCard.className = 'module-card-pricing';
+                    moduleCard.innerHTML = `
+                        <h3>Модуль ${module.module}</h3>
+                        <div class="module-description">${module.title || 'Описание не указано'}</div>
+                        <div class="module-price">${module.price || 3000} рублей</div>
+                    `;
+                    modulesList.appendChild(moduleCard);
+                });
+                console.log('✅ Принудительное обновление успешно! Модули загружены из raw GitHub');
+                return;
+            }
+        } else {
+            console.error('Ошибка загрузки из raw GitHub:', response.status, response.statusText);
         }
-    ];
+    } catch (rawGithubError) {
+        console.error('Ошибка при загрузке из raw GitHub:', rawGithubError);
+    }
     
-    // Отображаем модули
-    modulesList.innerHTML = '';
-    modules.forEach((module, index) => {
-        console.log(`Создаем карточку для модуля ${index + 1}:`, module);
-        const moduleCard = document.createElement('div');
-        moduleCard.className = 'module-card-pricing';
-        moduleCard.innerHTML = `
-            <h3>Модуль ${module.module}</h3>
-            <div class="module-description">${module.title || 'Описание не указано'}</div>
-            <div class="module-price">${module.price || 3000} рублей</div>
-        `;
-        modulesList.appendChild(moduleCard);
-    });
-    console.log('✅ Принудительное обновление успешно! Модули загружены из хардкода');
+    // Если ничего не сработало, показываем ошибку
+    modulesList.innerHTML = '<div class="loading" style="color: #dc3545;">❌ Не удалось загрузить модули. Проверьте подключение к интернету.</div>';
+    console.error('❌ Все попытки принудительного обновления не удались');
 }
 
 async function loadPricingModules() {
@@ -1791,8 +1797,11 @@ async function loadPricingModules() {
         // Если GitHub API не сработал, пробуем загрузить напрямую из raw GitHub
         console.log('Пробуем загрузить напрямую из raw GitHub...');
         try {
-            // Замените на ваш реальный GitHub username и название репозитория
-            const rawGithubUrl = 'https://raw.githubusercontent.com/your-username/your-repo/main/modules.json';
+            // Используем настройки GitHub или дефолтные значения
+            const githubSettings = getGithubSettings();
+            const username = githubSettings.username || 'ma89spb'; // Замените на ваш GitHub username
+            const repo = githubSettings.repo || 'programKids-main'; // Замените на название вашего репозитория
+            const rawGithubUrl = `https://raw.githubusercontent.com/${username}/${repo}/main/modules.json`;
             console.log('Загружаем из raw GitHub:', rawGithubUrl);
             
             const response = await fetch(rawGithubUrl, {
@@ -1835,39 +1844,10 @@ async function loadPricingModules() {
             console.error('Ошибка при загрузке из raw GitHub:', rawGithubError);
         }
         
-        // Если не удалось загрузить из GitHub, используем хардкод модулей как fallback
-        console.log('Используем хардкод модулей как fallback');
-        const modules = [
-            {
-                id: 1,
-                module: "A1",
-                title: "Базовые понятия",
-                videoType: "direct",
-                videoUrl: "https://vimeo.com/1091471613/1efd5536bb"
-            },
-            {
-                id: 2,
-                module: "Б2",
-                videoUrl: "https://vimeo.com/1096940811/313e75f168",
-                videoType: "vimeo",
-                price: 30000
-            },
-            {
-                id: 3,
-                module: "А3",
-                videoUrl: "https://vimeo.com/1096940811/313e75f168",
-                videoType: "vimeo",
-                price: 30000
-            },
-            {
-                id: 4,
-                module: "А9",
-                videoUrl: "https://vimeo.com/1096940811/313e75f168",
-                videoType: "vimeo",
-                price: 11000
-            }
-        ];
-        console.log('Загружены модули из хардкода:', modules);
+        // Если не удалось загрузить из GitHub, используем локальную БД как fallback
+        console.log('Используем локальную БД как fallback');
+        const modules = database.getAllContent();
+        console.log('Загружены модули из БД:', modules);
         
         if (modules.length === 0) {
             modulesList.innerHTML = '<div class="loading">Модули не найдены. Попробуйте обновить страницу.</div>';
@@ -3432,6 +3412,19 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 showGithubStatus('❌ Ошибка синхронизации с GitHub', 'error');
             }
+        });
+    }
+    
+    // Обработчик кнопки настройки по умолчанию
+    const setupButton = document.getElementById('setup-github-defaults');
+    if (setupButton) {
+        setupButton.addEventListener('click', function() {
+            // Заполняем поля дефолтными значениями
+            document.getElementById('github-username').value = 'ma89spb';
+            document.getElementById('github-repo').value = 'programKids-main';
+            document.getElementById('github-token').value = '';
+            
+            showGithubStatus('✅ Настройки по умолчанию применены. Сохраните настройки.', 'success');
         });
     }
 });
