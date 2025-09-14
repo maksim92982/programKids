@@ -928,11 +928,6 @@ html, body {
                 <p>Александров Максим Антонович<br>
                 Адрес: Ленинградская область, Всеволожский р-н, г. Бугры, Петровский бульвар 25<br>
                 ИНН 781699019604<br>
-                ОГРНИП ___________<br>
-                Р/с: ____________<br>
-                Банк: _____________<br>
-                К/с: ____________<br>
-                БИК: ____________<br>
                 Адрес электронной почты: ma89spb@gmail.com</p>
             </div>
         </main>
@@ -1371,12 +1366,14 @@ function getAgreementLink() {
 
 // Функция показа страницы политики конфиденциальности
 function showPrivacyPolicyPage() {
-    window.location.href = 'privacy-policy.html';
+    // Открываем в новом окне
+    window.open('privacy-policy.html', '_blank');
 }
 
 // Функция показа страницы политики возврата
 function showRefundPolicyPage() {
-    window.location.href = 'refund-policy.html';
+    // Открываем в новом окне
+    window.open('refund-policy.html', '_blank');
 }
 // Функция показа страницы тарифов
 function showPricingPage() {
@@ -1462,6 +1459,55 @@ async function forceLoadPricingModules() {
         }
     }
     
+    // Если ничего не сработало, пробуем GitHub API
+    console.log('Пробуем загрузить из GitHub API...');
+    try {
+        const githubSettings = database.getGithubSettings();
+        if (githubSettings.username && githubSettings.repo) {
+            const githubUrl = `https://api.github.com/repos/${githubSettings.username}/${githubSettings.repo}/contents/modules.json`;
+            console.log('Загружаем из GitHub:', githubUrl);
+            
+            const response = await fetch(githubUrl, {
+                headers: {
+                    'Accept': 'application/vnd.github.v3+json',
+                    'User-Agent': 'Mozilla/5.0'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const content = atob(data.content);
+                const modulesData = JSON.parse(content);
+                const modules = modulesData.modules || [];
+                
+                console.log('Загружены модули из GitHub:', modules);
+                console.log('Количество модулей из GitHub:', modules.length);
+                
+                if (modules.length > 0) {
+                    // Отображаем модули
+                    modulesList.innerHTML = '';
+                    modules.forEach((module, index) => {
+                        console.log(`Создаем карточку для модуля ${index + 1}:`, module);
+                        const moduleCard = document.createElement('div');
+                        moduleCard.className = 'module-card-pricing';
+                        moduleCard.innerHTML = `
+                            <h3>Модуль ${module.module}</h3>
+                            <div class="module-description">${module.title || 'Описание не указано'}</div>
+                            <div class="module-price">${module.price || 3000} рублей</div>
+                        `;
+                        modulesList.appendChild(moduleCard);
+                    });
+                    console.log('✅ Принудительное обновление успешно! Модули загружены из GitHub API');
+                    return;
+                }
+            } else {
+                console.error('Ошибка загрузки из GitHub API:', response.status, response.statusText);
+            }
+        }
+    } catch (githubError) {
+        console.error('Ошибка при загрузке из GitHub API:', githubError);
+    }
+    
     // Если ничего не сработало, показываем ошибку
     modulesList.innerHTML = '<div class="loading" style="color: #dc3545;">❌ Не удалось загрузить модули. Проверьте подключение к интернету.</div>';
     console.error('❌ Все попытки принудительного обновления не удались');
@@ -1540,7 +1586,56 @@ async function loadPricingModules() {
             return;
         }
         
-        // Если не удалось загрузить из JSON, используем локальную БД как fallback
+        // Если не удалось загрузить из JSON, пробуем загрузить из GitHub API
+        console.log('Пробуем загрузить из GitHub API...');
+        try {
+            const githubSettings = database.getGithubSettings();
+            if (githubSettings.username && githubSettings.repo) {
+                const githubUrl = `https://api.github.com/repos/${githubSettings.username}/${githubSettings.repo}/contents/modules.json`;
+                console.log('Загружаем из GitHub:', githubUrl);
+                
+                const response = await fetch(githubUrl, {
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json',
+                        'User-Agent': 'Mozilla/5.0'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const content = atob(data.content);
+                    const modulesData = JSON.parse(content);
+                    const modules = modulesData.modules || [];
+                    
+                    console.log('Загружены модули из GitHub:', modules);
+                    console.log('Количество модулей из GitHub:', modules.length);
+                    
+                    if (modules.length > 0) {
+                        // Отображаем модули
+                        modulesList.innerHTML = '';
+                        modules.forEach((module, index) => {
+                            console.log(`Создаем карточку для модуля ${index + 1}:`, module);
+                            const moduleCard = document.createElement('div');
+                            moduleCard.className = 'module-card-pricing';
+                            moduleCard.innerHTML = `
+                                <h3>Модуль ${module.module}</h3>
+                                <div class="module-description">${module.title || 'Описание не указано'}</div>
+                                <div class="module-price">${module.price || 3000} рублей</div>
+                            `;
+                            modulesList.appendChild(moduleCard);
+                        });
+                        console.log('✅ Модули загружены из GitHub API');
+                        return;
+                    }
+                } else {
+                    console.error('Ошибка загрузки из GitHub API:', response.status, response.statusText);
+                }
+            }
+        } catch (githubError) {
+            console.error('Ошибка при загрузке из GitHub API:', githubError);
+        }
+        
+        // Если не удалось загрузить из GitHub, используем локальную БД как fallback
         console.log('Используем локальную БД как fallback');
         const modules = database.getAllContent();
         console.log('Загружены модули из БД:', modules);
