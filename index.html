@@ -1154,6 +1154,7 @@ html, body {
                             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                                 <button type="submit">Сохранить настройки</button>
                                 <button type="button" id="test-github-connection">Проверить подключение</button>
+                                <button type="button" id="sync-to-github" style="background: #17a2b8; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">🔄 Синхронизировать</button>
                             </div>
                         </form>
                         <div id="github-status"></div>
@@ -1292,6 +1293,7 @@ html, body {
             <div style="display: flex; gap: 10px; align-items: center;">
                 <button class="back-button" onclick="showSection('first-page')">← На главную</button>
                 <button class="refresh-button" onclick="loadPricingModules()" style="background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">🔄 Обновить</button>
+                <button class="refresh-button" onclick="forceLoadPricingModules()" style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin-left: 10px;">⚡ Принудительно</button>
             </div>
         </header>
         
@@ -1388,6 +1390,87 @@ function showPricingPage() {
 }
 
 // Загрузка модулей для страницы тарифов
+// Функция принудительного обновления модулей (с полным обходом кеша)
+async function forceLoadPricingModules() {
+    console.log('=== ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ МОДУЛЕЙ ===');
+    
+    const modulesList = document.getElementById('modules-list');
+    if (!modulesList) {
+        console.error('Элемент modules-list не найден');
+        return;
+    }
+    
+    modulesList.innerHTML = '<div class="loading">Принудительная загрузка...</div>';
+    
+    // Очищаем все возможные кеши
+    if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        for (const cacheName of cacheNames) {
+            await caches.delete(cacheName);
+            console.log('Очищен кеш:', cacheName);
+        }
+    }
+    
+    // Пробуем загрузить с максимально агрессивными параметрами
+    const aggressiveParams = [
+        '?force=' + Date.now() + '&nocache=' + Math.random() + '&refresh=' + Date.now(),
+        '?v=' + Math.random() + '&t=' + Date.now() + '&r=' + Math.random(),
+        '?cache=no&time=' + Date.now() + '&random=' + Math.random()
+    ];
+    
+    for (let i = 0; i < aggressiveParams.length; i++) {
+        try {
+            console.log(`Агрессивная попытка ${i + 1}: загружаем modules.json${aggressiveParams[i]}...`);
+            
+            const response = await fetch('modules.json' + aggressiveParams[i], {
+                method: 'GET',
+                cache: 'no-cache',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                    'If-Modified-Since': '0'
+                }
+            });
+            
+            console.log(`Агрессивная попытка ${i + 1}: ответ сервера:`, response.status, response.statusText);
+            
+            if (response.ok) {
+                const data = await response.json();
+                const modules = data.modules || [];
+                console.log(`Агрессивная попытка ${i + 1}: загружены модули:`, modules);
+                console.log(`Агрессивная попытка ${i + 1}: количество модулей:`, modules.length);
+                
+                if (modules.length > 0) {
+                    // Отображаем модули
+                    modulesList.innerHTML = '';
+                    modules.forEach((module, index) => {
+                        console.log(`Создаем карточку для модуля ${index + 1}:`, module);
+                        const moduleCard = document.createElement('div');
+                        moduleCard.className = 'module-card-pricing';
+                        moduleCard.innerHTML = `
+                            <h3>Модуль ${module.module}</h3>
+                            <div class="module-description">${module.title || 'Описание не указано'}</div>
+                            <div class="module-price">${module.price || 3000} рублей</div>
+                        `;
+                        modulesList.appendChild(moduleCard);
+                    });
+                    console.log('✅ Принудительное обновление успешно! Все модули отображены');
+                    return;
+                }
+            } else {
+                console.error(`Агрессивная попытка ${i + 1}: ошибка загрузки:`, response.status, response.statusText);
+            }
+        } catch (error) {
+            console.error(`Агрессивная попытка ${i + 1}: ошибка:`, error);
+        }
+    }
+    
+    // Если ничего не сработало, показываем ошибку
+    modulesList.innerHTML = '<div class="loading" style="color: #dc3545;">❌ Не удалось загрузить модули. Проверьте подключение к интернету.</div>';
+    console.error('❌ Все попытки принудительного обновления не удались');
+}
+
 async function loadPricingModules() {
     try {
         const modulesList = document.getElementById('pricing-modules-list');
@@ -1399,36 +1482,66 @@ async function loadPricingModules() {
         modulesList.innerHTML = '<div class="loading">Загрузка тарифов...</div>';
         
         // Всегда пытаемся загрузить из JSON файла (актуальные данные)
-        try {
-            const response = await fetch('modules.json?t=' + Date.now()); // Добавляем timestamp для обхода кеша
-            if (response.ok) {
-                const data = await response.json();
-                const modules = data.modules || [];
-                console.log('Загружены модули из JSON:', modules);
+        let modulesLoaded = false;
+        
+        // Пробуем несколько способов загрузки с разными параметрами кеша
+        const cacheBustingParams = [
+            '?t=' + Date.now(),
+            '?v=' + Math.random(),
+            '?nocache=' + Date.now() + '&r=' + Math.random(),
+            '?refresh=' + Date.now()
+        ];
+        
+        for (let i = 0; i < cacheBustingParams.length && !modulesLoaded; i++) {
+            try {
+                console.log(`Попытка ${i + 1}: загружаем modules.json${cacheBustingParams[i]}...`);
                 
-                if (modules.length === 0) {
-                    modulesList.innerHTML = '<div class="loading">Модули не найдены</div>';
-                    return;
-                }
-                
-                // Отображаем модули
-                modulesList.innerHTML = '';
-                modules.forEach(module => {
-                    const moduleCard = document.createElement('div');
-                    moduleCard.className = 'module-card-pricing';
-                    moduleCard.innerHTML = `
-                        <h3>Модуль ${module.module}</h3>
-                        <div class="module-description">${module.title || 'Описание не указано'}</div>
-                        <div class="module-price">${module.price || 3000} рублей</div>
-                    `;
-                    modulesList.appendChild(moduleCard);
+                const response = await fetch('modules.json' + cacheBustingParams[i], {
+                    method: 'GET',
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
                 });
-                return;
-            } else {
-                console.error('Ошибка загрузки modules.json:', response.status);
+                
+                console.log(`Попытка ${i + 1}: ответ сервера:`, response.status, response.statusText);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const modules = data.modules || [];
+                    console.log(`Попытка ${i + 1}: загружены модули из JSON:`, modules);
+                    console.log(`Попытка ${i + 1}: количество модулей:`, modules.length);
+                    
+                    if (modules.length > 0) {
+                        // Отображаем модули
+                        modulesList.innerHTML = '';
+                        modules.forEach((module, index) => {
+                            console.log(`Создаем карточку для модуля ${index + 1}:`, module);
+                            const moduleCard = document.createElement('div');
+                            moduleCard.className = 'module-card-pricing';
+                            moduleCard.innerHTML = `
+                                <h3>Модуль ${module.module}</h3>
+                                <div class="module-description">${module.title || 'Описание не указано'}</div>
+                                <div class="module-price">${module.price || 3000} рублей</div>
+                            `;
+                            modulesList.appendChild(moduleCard);
+                        });
+                        console.log('Все модули отображены');
+                        modulesLoaded = true;
+                        break;
+                    }
+                } else {
+                    console.error(`Попытка ${i + 1}: ошибка загрузки modules.json:`, response.status, response.statusText);
+                }
+            } catch (jsonError) {
+                console.error(`Попытка ${i + 1}: ошибка при загрузке из JSON:`, jsonError);
             }
-        } catch (jsonError) {
-            console.error('Ошибка при загрузке из JSON:', jsonError);
+        }
+        
+        if (modulesLoaded) {
+            return;
         }
         
         // Если не удалось загрузить из JSON, используем локальную БД как fallback
@@ -2453,7 +2566,13 @@ document.getElementById('add-video-form').addEventListener('submit', function(e)
     loadContent();
     
     // Обновляем GitHub
-    updateModulesInGitHub(database.content);
+    console.log('Обновляем GitHub с новым контентом:', database.content);
+    const githubUpdateResult = await updateModulesInGitHub(database.content);
+    if (githubUpdateResult) {
+        console.log('GitHub успешно обновлен');
+    } else {
+        console.error('Ошибка обновления GitHub');
+    }
     
     this.reset();
 });
@@ -2966,6 +3085,23 @@ document.addEventListener('DOMContentLoaded', function() {
     if (testButton) {
         testButton.addEventListener('click', function() {
             testGithubConnection();
+        });
+    }
+    
+    // Обработчик кнопки синхронизации
+    const syncButton = document.getElementById('sync-to-github');
+    if (syncButton) {
+        syncButton.addEventListener('click', async function() {
+            const modules = database.getAllContent();
+            console.log('Синхронизируем модули с GitHub:', modules);
+            showGithubStatus('Синхронизация с GitHub...', 'info');
+            
+            const result = await updateModulesInGitHub(modules);
+            if (result) {
+                showGithubStatus('✅ Модули успешно синхронизированы с GitHub', 'success');
+            } else {
+                showGithubStatus('❌ Ошибка синхронизации с GitHub', 'error');
+            }
         });
     }
 });
