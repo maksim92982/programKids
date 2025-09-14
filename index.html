@@ -16,6 +16,7 @@
 
     
     <title>Обучающая платформа</title>
+    <!-- Updated for Vercel deployment -->
     <style>
 .contract-link {
     color: #3498db;
@@ -1200,12 +1201,12 @@ html, body {
 </div>
     <!-- Навигационные вкладки -->
     <div class="nav-tabs">
-        <div class="nav-tab" onclick="window.location.hash = ''; showSection('first-page')">Главная</div>
-        <div class="nav-tab" onclick="window.location.hash = '#authorization'; showSection('dashboard-page')">Личный кабинет</div>
-        <div class="nav-tab" onclick="window.location.hash = '#prices'; showPricingPage()">1Тарифы</div>
-        <div class="nav-tab" onclick="window.location.hash = '#offerta'; showAgreementPage()">Договор</div>
-        <div class="nav-tab" onclick="window.location.hash = '#privacy-policy'; showSection('privacy-policy-page')">Конфиденциальность</div>
-        <div class="nav-tab" onclick="window.location.hash = '#refund-policy'; showSection('refund-policy-page')">Возврат</div>
+        <div class="nav-tab" onclick="navigateToSection('', 'first-page')">Главная</div>
+        <div class="nav-tab" onclick="navigateToSection('#authorization', 'dashboard-page')">Личный кабинет</div>
+        <div class="nav-tab" onclick="navigateToSection('#prices', 'pricing-page')">Тарифы</div>
+        <div class="nav-tab" onclick="navigateToSection('#offerta', 'agreement-page')">Договор</div>
+        <div class="nav-tab" onclick="navigateToSection('#privacy-policy', 'privacy-policy-page')">Конфиденциальность</div>
+        <div class="nav-tab" onclick="navigateToSection('#refund-policy', 'refund-policy-page')">Возврат</div>
     </div>
     <!-- Модальное окно покупки -->
 <!-- Модальное окно покупки -->
@@ -1310,17 +1311,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Функция показа страницы с договором
 function showAgreementPage() {
-    // Скрываем все другие секции
-    document.querySelectorAll('.page-section').forEach(section => {
-        section.classList.remove('active-section');
-    });
-    
-    // Показываем секцию с договором
-    const agreementSection = document.getElementById('agreement-page');
-    if (agreementSection) {
-        agreementSection.classList.add('active-section');
-        window.scrollTo(0, 0);
-    }
+    showSection('agreement-page');
+    window.scrollTo(0, 0);
 }
 
 // Функция для получения полной ссылки на договор
@@ -1358,6 +1350,7 @@ function getAgreementLink() {
 function showPricingPage() {
     showSection('pricing-page');
     loadPricingModules();
+    window.scrollTo(0, 0);
 }
 
 // Загрузка модулей для страницы тарифов
@@ -1800,7 +1793,13 @@ function showSection(sectionId) {
     document.querySelectorAll('.page-section').forEach(section => {
         section.classList.remove('active-section');
     });
-    document.getElementById(sectionId).classList.add('active-section');
+    
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.add('active-section');
+    } else {
+        console.error(`Секция с ID "${sectionId}" не найдена`);
+    }
     
     // Добавляем/удаляем класс для body в зависимости от активной страницы
     if (sectionId === 'first-page') {
@@ -1810,11 +1809,32 @@ function showSection(sectionId) {
     }
 }
 
+// Функция для навигации с обновлением URL
+function navigateToSection(hash, sectionId) {
+    // Обновляем URL
+    if (hash) {
+        window.location.hash = hash;
+    } else {
+        window.location.hash = '';
+    }
+    
+    // Показываем нужную секцию
+    if (sectionId === 'pricing-page') {
+        showPricingPage();
+    } else if (sectionId === 'agreement-page') {
+        showAgreementPage();
+    } else {
+        showSection(sectionId);
+    }
+}
+
 // Навигация по вкладкам (для разработки)
 document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', function() {
         const target = this.getAttribute('data-target');
-        showSection(target);
+        if (target) {
+            showSection(target);
+        }
     });
 });
 
@@ -1824,6 +1844,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const currentUser =  database.getCurrentUser();
     const currentAdmin =  database.getCurrentAdmin();
+    
+    // Получаем хэш из URL
+    const hash = window.location.hash;
     
     // Проверяем, не пытается ли пользователь зайти в админку
     if (hash === '#admin12345') {
@@ -2837,7 +2860,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ====== Конец файла ======
 </script>
-
 
 
 
