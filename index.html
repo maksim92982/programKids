@@ -1363,24 +1363,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Функция показа страницы с договором
-function showAgreementPage() {
-    // Скрываем все другие секции
-    document.querySelectorAll('.page-section').forEach(section => {
-        section.classList.remove('active-section');
-    });
-    
-    // Показываем секцию с договором (нужно создать такую секцию)
-    const agreementSection = document.getElementById('agreement-page');
-    if (agreementSection) {
-        agreementSection.classList.add('active-section');
-        window.scrollTo(0, 0);
-    }
-}
 
 // Функция для получения ссылки на договор
 function getAgreementLink() {
     return window.location.origin + '/#agreement';
+}
+
+// Функция показа страницы политики конфиденциальности
+function showPrivacyPolicyPage() {
+    window.location.href = 'privacy-policy.html';
+}
+
+// Функция показа страницы политики возврата
+function showRefundPolicyPage() {
+    window.location.href = 'refund-policy.html';
 }
 // Функция показа страницы тарифов
 function showPricingPage() {
@@ -1973,6 +1969,10 @@ function navigateToSection(hash, sectionId) {
         showPricingPage();
     } else if (sectionId === 'agreement-page') {
         showAgreementPage();
+    } else if (sectionId === 'privacy-policy-page') {
+        showPrivacyPolicyPage();
+    } else if (sectionId === 'refund-policy-page') {
+        showRefundPolicyPage();
     } else {
         showSection(sectionId);
     }
@@ -2522,7 +2522,7 @@ document.getElementById('edit-user-form').addEventListener('submit', function(e)
 });
 
 // Добавление нового контента
-document.getElementById('add-video-form').addEventListener('submit', function(e) {
+document.getElementById('add-video-form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const module = document.getElementById('video-module').value;
