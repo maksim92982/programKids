@@ -20,6 +20,13 @@
       "videoUrl": "https://vimeo.com/1096940811/313e75f168",
       "videoType": "vimeo",
       "price": 30000
+    },
+    {
+      "id": 4,
+      "module": "А9",
+      "videoUrl": "https://vimeo.com/1096940811/313e75f168",
+      "videoType": "vimeo",
+      "price": 11000
     }
   ]
 }
