@@ -182,6 +182,7 @@
             background-color: #f5f5f5;
             color: #333;
             line-height: 1.6;
+            padding-bottom: 80px; /* Отступ для навигации */
         }
 
         .container {
@@ -556,7 +557,12 @@
     background: #2c3e50;
     padding: 10px;
     border-radius: 5px;
-    flex-wrap: wrap; 
+    flex-wrap: wrap;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
 }
 
 .nav-tab {
@@ -1255,7 +1261,7 @@ html, body {
             <div class="form-group checkbox">
     <input type="checkbox" id="accept-agreement" required>
     <label for="accept-agreement">
-        Я принимаю условия <a href="agreement.html" target="_blank" rel="noopener noreferrer">договора</a>
+        Я принимаю условия <a href="#offerta" onclick="showAgreementPage(); return false;">договора</a>
     </label>
 </div>
             
@@ -1283,7 +1289,10 @@ html, body {
     <div class="container">
         <header>
             <h1>Прайс-лист на приобретение модулей</h1>
-            <button class="back-button" onclick="showSection('first-page')">← На главную</button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="back-button" onclick="showSection('first-page')">← На главную</button>
+                <button class="refresh-button" onclick="loadPricingModules()" style="background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">🔄 Обновить</button>
+            </div>
         </header>
         
         <main>
@@ -1389,9 +1398,9 @@ async function loadPricingModules() {
         
         modulesList.innerHTML = '<div class="loading">Загрузка тарифов...</div>';
         
-        // Сначала пытаемся загрузить из JSON файла
+        // Всегда пытаемся загрузить из JSON файла (актуальные данные)
         try {
-            const response = await fetch('modules.json');
+            const response = await fetch('modules.json?t=' + Date.now()); // Добавляем timestamp для обхода кеша
             if (response.ok) {
                 const data = await response.json();
                 const modules = data.modules || [];
@@ -1409,23 +1418,26 @@ async function loadPricingModules() {
                     moduleCard.className = 'module-card-pricing';
                     moduleCard.innerHTML = `
                         <h3>Модуль ${module.module}</h3>
-                        <div class="module-description">${module.title}</div>
+                        <div class="module-description">${module.title || 'Описание не указано'}</div>
                         <div class="module-price">${module.price || 3000} рублей</div>
                     `;
                     modulesList.appendChild(moduleCard);
                 });
                 return;
+            } else {
+                console.error('Ошибка загрузки modules.json:', response.status);
             }
         } catch (jsonError) {
-            console.log('Не удалось загрузить из JSON, используем локальную БД:', jsonError);
+            console.error('Ошибка при загрузке из JSON:', jsonError);
         }
         
-        // Если не удалось загрузить из JSON, используем локальную БД
+        // Если не удалось загрузить из JSON, используем локальную БД как fallback
+        console.log('Используем локальную БД как fallback');
         const modules = database.getAllContent();
         console.log('Загружены модули из БД:', modules);
         
         if (modules.length === 0) {
-            modulesList.innerHTML = '<div class="loading">Модули не найдены</div>';
+            modulesList.innerHTML = '<div class="loading">Модули не найдены. Попробуйте обновить страницу.</div>';
             return;
         }
         
@@ -1436,7 +1448,7 @@ async function loadPricingModules() {
             moduleCard.className = 'module-card-pricing';
             moduleCard.innerHTML = `
                 <h3>Модуль ${module.module}</h3>
-                <div class="module-description">${module.title}</div>
+                <div class="module-description">${module.title || 'Описание не указано'}</div>
                 <div class="module-price">${module.price || 3000} рублей</div>
             `;
             modulesList.appendChild(moduleCard);
@@ -1446,7 +1458,7 @@ async function loadPricingModules() {
         console.error('Ошибка загрузки тарифов:', error);
         const modulesList = document.getElementById('pricing-modules-list');
         if (modulesList) {
-            modulesList.innerHTML = '<div class="loading">Ошибка загрузки тарифов</div>';
+            modulesList.innerHTML = '<div class="loading">Ошибка загрузки тарифов. Попробуйте обновить страницу.</div>';
         }
     }
 }
