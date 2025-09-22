@@ -1489,38 +1489,38 @@ const HARDCODED_MODULES = {
     modules: [
         {
             id: 1,
-            module: "A1",
-            title: "Базовые понятия",
-            videoType: "direct",
-            videoUrl: "https://vimeo.com/1091471613/1efd5536bb"
+            number: 1,
+            name: "Первые шаги в программировании (ПиктоМир)",
+            description: "В этом модуле дети познакомятся с фундаментальными понятиями программирования без чтения текста! С помощью ПиктоМира они будут составлять алгоритмы для робота, используя интуитивно понятные пиктограммы. Ребенок научится мыслить логически, составлять последовательности команд и предвидеть результат своих действий. Идеальная стартовая точка для развития алгоритмического мышления.",
+            price: 3000
         },
         {
             id: 2,
-            module: "Б2",
-            videoUrl: "https://vimeo.com/1096940811/313e75f168",
-            videoType: "vimeo",
-            price: 30000
+            number: 2,
+            name: "Веселое программирование (ScratchJr)",
+            description: "Теперь наши алгоритмы \"оживут\"! ScratchJr позволяет детям от 5 до 7 лет создавать свои первые интерактивные истории и мини-игры на планшете. Ученики освоят базовые концепции: циклы, условия, события. Они научатся управлять персонажами, добавлять фоны и звуки, создавая полноценные анимированные проекты своими руками.",
+            price: 3000
         },
         {
             id: 3,
-            module: "А3",
-            videoUrl: "https://vimeo.com/1096940811/313e75f168",
-            videoType: "vimeo",
-            price: 30000
+            number: 3,
+            name: "Программируем мир игр (Kodu Game Lab)",
+            description: "Мечтали создать свой собственный 3D-мир? Kodu Game Lab делает это возможным! В этом модуле дети будут конструировать ландшафты, населять их персонажами и программировать их поведение с помощью простого визуального языка. Это мощный шаг вперед, который знакомит с 3D-моделированием и игровым дизайном в увлекательной форме.",
+            price: 3000
         },
         {
             id: 4,
-            module: "А9",
-            videoUrl: "https://vimeo.com/1096940811/313e75f168",
-            videoType: "vimeo",
-            price: 11000
+            number: 4,
+            name: "Логика и головоломки (Run Marco!)",
+            description: "Этот модуль — отличная тренировка логики и подготовки к более сложным языкам программирования. На основе языка Python ребенок будет помогать персонажу Марко проходить уровни, составляя программы из готовых блоков-команд. Курс учит решать задачи, разбивать их на шаги и знакомит с синтаксисом одного из самых популярных языков в мире.",
+            price: 3000
         },
         {
             id: 5,
-            module: "А4",
-            videoUrl: "https://vimeo.com/1096940811/313e75f168",
-            videoType: "vimeo",
-            price: 15000
+            number: 5,
+            name: "Творчество и создание проектов (Scratch)",
+            description: "Финальный и самый творческий модуль! Здесь все полученные знания применяются в полноценной среде программирования Scratch. Ученики создадут свои собственные игры, мультфильмы и интерактивные открытки. Они глубоко освоят ключевые концепции: переменные, списки, клонирование, передачу сообщений. Это модуль, где ребенок становится настоящим создателем цифрового контента.",
+            price: 3000
         }
     ]
 };
@@ -1554,9 +1554,9 @@ async function forceLoadPricingModules() {
         const moduleCard = document.createElement('div');
         moduleCard.className = 'module-card-pricing';
         moduleCard.innerHTML = `
-            <h3>Модуль ${module.module}</h3>
-            <div class="module-description">${module.title || 'Описание не указано'}</div>
-            <div class="module-price">${module.price || 3000} рублей</div>
+            <h3>Модуль ${module.number}: ${module.name}</h3>
+            <div class="module-description">Описание: ${module.description}</div>
+            <div class="module-price">${module.price} руб</div>
         `;
         modulesList.appendChild(moduleCard);
     });
@@ -1581,9 +1581,9 @@ async function loadPricingModules() {
             const moduleCard = document.createElement('div');
             moduleCard.className = 'module-card-pricing';
             moduleCard.innerHTML = `
-                <h3>Модуль ${module.module}</h3>
-                <div class="module-description">${module.title || 'Описание не указано'}</div>
-                <div class="module-price">${module.price || 3000} рублей</div>
+                <h3>Модуль ${module.number}: ${module.name}</h3>
+                <div class="module-description">Описание: ${module.description}</div>
+                <div class="module-price">${module.price} руб</div>
             `;
             modulesList.appendChild(moduleCard);
         });
