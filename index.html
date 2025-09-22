@@ -1484,6 +1484,47 @@ function showPricingPage() {
     window.scrollTo(0, 0);
 }
 
+// ХАРДКОД МОДУЛЕЙ ДЛЯ СТРАНИЦЫ ТАРИФОВ (отображается у всех пользователей)
+const HARDCODED_MODULES = {
+    modules: [
+        {
+            id: 1,
+            module: "A1",
+            title: "Базовые понятия",
+            videoType: "direct",
+            videoUrl: "https://vimeo.com/1091471613/1efd5536bb"
+        },
+        {
+            id: 2,
+            module: "Б2",
+            videoUrl: "https://vimeo.com/1096940811/313e75f168",
+            videoType: "vimeo",
+            price: 30000
+        },
+        {
+            id: 3,
+            module: "А3",
+            videoUrl: "https://vimeo.com/1096940811/313e75f168",
+            videoType: "vimeo",
+            price: 30000
+        },
+        {
+            id: 4,
+            module: "А9",
+            videoUrl: "https://vimeo.com/1096940811/313e75f168",
+            videoType: "vimeo",
+            price: 11000
+        },
+        {
+            id: 5,
+            module: "А4",
+            videoUrl: "https://vimeo.com/1096940811/313e75f168",
+            videoType: "vimeo",
+            price: 15000
+        }
+    ]
+};
+
 // Загрузка модулей для страницы тарифов
 // Функция принудительного обновления модулей (с полным обходом кеша)
 async function forceLoadPricingModules() {
@@ -1495,7 +1536,7 @@ async function forceLoadPricingModules() {
         return;
     }
     
-    modulesList.innerHTML = '<div class="loading">Принудительная загрузка...</div>';
+    modulesList.innerHTML = '<div class="loading">Обновляем прайс-лист...</div>';
     
     // Очищаем все возможные кеши
     if ('caches' in window) {
@@ -1506,166 +1547,21 @@ async function forceLoadPricingModules() {
         }
     }
     
-    // Пробуем загрузить с максимально агрессивными параметрами
-    const aggressiveParams = [
-        '?force=' + Date.now() + '&nocache=' + Math.random() + '&refresh=' + Date.now(),
-        '?v=' + Math.random() + '&t=' + Date.now() + '&r=' + Math.random(),
-        '?cache=no&time=' + Date.now() + '&random=' + Math.random()
-    ];
-    
-    for (let i = 0; i < aggressiveParams.length; i++) {
-        try {
-            console.log(`Агрессивная попытка ${i + 1}: загружаем modules.json${aggressiveParams[i]}...`);
-            
-            const response = await fetch('modules.json' + aggressiveParams[i], {
-                method: 'GET',
-                cache: 'no-cache',
-                headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-                    'Pragma': 'no-cache',
-                    'Expires': '0',
-                    'If-Modified-Since': '0'
-                }
-            });
-            
-            console.log(`Агрессивная попытка ${i + 1}: ответ сервера:`, response.status, response.statusText);
-            
-            if (response.ok) {
-                const data = await response.json();
-                const modules = data.modules || [];
-                console.log(`Агрессивная попытка ${i + 1}: загружены модули:`, modules);
-                console.log(`Агрессивная попытка ${i + 1}: количество модулей:`, modules.length);
-                
-                if (modules.length > 0) {
-                    // Отображаем модули
-                    modulesList.innerHTML = '';
-                    modules.forEach((module, index) => {
-                        console.log(`Создаем карточку для модуля ${index + 1}:`, module);
-                        const moduleCard = document.createElement('div');
-                        moduleCard.className = 'module-card-pricing';
-                        moduleCard.innerHTML = `
-                            <h3>Модуль ${module.module}</h3>
-                            <div class="module-description">${module.title || 'Описание не указано'}</div>
-                            <div class="module-price">${module.price || 3000} рублей</div>
-                        `;
-                        modulesList.appendChild(moduleCard);
-                    });
-                    console.log('✅ Принудительное обновление успешно! Все модули отображены');
-                    return;
-                }
-            } else {
-                console.error(`Агрессивная попытка ${i + 1}: ошибка загрузки:`, response.status, response.statusText);
-            }
-        } catch (error) {
-            console.error(`Агрессивная попытка ${i + 1}: ошибка:`, error);
-        }
-    }
-    
-    // Если ничего не сработало, пробуем GitHub API
-    console.log('Пробуем загрузить из GitHub API...');
-    try {
-        const githubSettings = getGithubSettings();
-        // Если настройки не настроены, используем дефолтные
-        const username = githubSettings.username || 'your-username';
-        const repo = githubSettings.repo || 'your-repo';
-        
-        if (username && repo && username !== 'your-username' && repo !== 'your-repo') {
-            const githubUrl = `https://api.github.com/repos/${username}/${repo}/contents/modules.json`;
-            console.log('Загружаем из GitHub:', githubUrl);
-            
-            const response = await fetch(githubUrl, {
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json',
-                    'User-Agent': 'Mozilla/5.0'
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                const content = atob(data.content);
-                const modulesData = JSON.parse(content);
-                const modules = modulesData.modules || [];
-                
-                console.log('Загружены модули из GitHub:', modules);
-                console.log('Количество модулей из GitHub:', modules.length);
-                
-                if (modules.length > 0) {
-                    // Отображаем модули
-                    modulesList.innerHTML = '';
-                    modules.forEach((module, index) => {
-                        console.log(`Создаем карточку для модуля ${index + 1}:`, module);
-                        const moduleCard = document.createElement('div');
-                        moduleCard.className = 'module-card-pricing';
-                        moduleCard.innerHTML = `
-                            <h3>Модуль ${module.module}</h3>
-                            <div class="module-description">${module.title || 'Описание не указано'}</div>
-                            <div class="module-price">${module.price || 3000} рублей</div>
-                        `;
-                        modulesList.appendChild(moduleCard);
-                    });
-                    console.log('✅ Принудительное обновление успешно! Модули загружены из GitHub API');
-                    return;
-                }
-            } else {
-                console.error('Ошибка загрузки из GitHub API:', response.status, response.statusText);
-            }
-        }
-    } catch (githubError) {
-        console.error('Ошибка при загрузке из GitHub API:', githubError);
-    }
-    
-    // Если ничего не сработало, пробуем raw GitHub
-    console.log('Пробуем загрузить из raw GitHub...');
-    try {
-        const githubSettings = getGithubSettings();
-        const username = githubSettings.username || 'ma89spb';
-        const repo = githubSettings.repo || 'programKids-main';
-        const rawGithubUrl = `https://raw.githubusercontent.com/${username}/${repo}/main/modules.json`;
-        console.log('Загружаем из raw GitHub:', rawGithubUrl);
-        
-        const response = await fetch(rawGithubUrl, {
-            method: 'GET',
-            cache: 'no-cache',
-            headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            const modules = data.modules || [];
-            console.log('Загружены модули из raw GitHub:', modules);
-            console.log('Количество модулей из raw GitHub:', modules.length);
-            
-            if (modules.length > 0) {
-                // Отображаем модули
-                modulesList.innerHTML = '';
-                modules.forEach((module, index) => {
-                    console.log(`Создаем карточку для модуля ${index + 1}:`, module);
-                    const moduleCard = document.createElement('div');
-                    moduleCard.className = 'module-card-pricing';
-                    moduleCard.innerHTML = `
-                        <h3>Модуль ${module.module}</h3>
-                        <div class="module-description">${module.title || 'Описание не указано'}</div>
-                        <div class="module-price">${module.price || 3000} рублей</div>
-                    `;
-                    modulesList.appendChild(moduleCard);
-                });
-                console.log('✅ Принудительное обновление успешно! Модули загружены из raw GitHub');
-                return;
-            }
-        } else {
-            console.error('Ошибка загрузки из raw GitHub:', response.status, response.statusText);
-        }
-    } catch (rawGithubError) {
-        console.error('Ошибка при загрузке из raw GitHub:', rawGithubError);
-    }
-    
-    // Если ничего не сработало, показываем ошибку
-    modulesList.innerHTML = '<div class="loading" style="color: #dc3545;">❌ Не удалось загрузить модули. Проверьте подключение к интернету.</div>';
-    console.error('❌ Все попытки принудительного обновления не удались');
+    // Рендерим из хардкода
+    const modules = (HARDCODED_MODULES && Array.isArray(HARDCODED_MODULES.modules)) ? HARDCODED_MODULES.modules : [];
+    modulesList.innerHTML = '';
+    modules.forEach((module, index) => {
+        const moduleCard = document.createElement('div');
+        moduleCard.className = 'module-card-pricing';
+        moduleCard.innerHTML = `
+            <h3>Модуль ${module.module}</h3>
+            <div class="module-description">${module.title || 'Описание не указано'}</div>
+            <div class="module-price">${module.price || 3000} рублей</div>
+        `;
+        modulesList.appendChild(moduleCard);
+    });
+    console.log('✅ Прайс-лист обновлён из хардкода');
+    return;
 }
 
 async function loadPricingModules() {
@@ -1676,187 +1572,12 @@ async function loadPricingModules() {
             return;
         }
         
-        modulesList.innerHTML = '<div class="loading">Загрузка тарифов...</div>';
+        modulesList.innerHTML = '<div class="loading">Загружаем прайс-лист...</div>';
         
-        // Всегда пытаемся загрузить из JSON файла (актуальные данные)
-        let modulesLoaded = false;
-        
-        // Пробуем несколько способов загрузки с разными параметрами кеша
-        const cacheBustingParams = [
-            '?t=' + Date.now(),
-            '?v=' + Math.random(),
-            '?nocache=' + Date.now() + '&r=' + Math.random(),
-            '?refresh=' + Date.now()
-        ];
-        
-        for (let i = 0; i < cacheBustingParams.length && !modulesLoaded; i++) {
-            try {
-                console.log(`Попытка ${i + 1}: загружаем modules.json${cacheBustingParams[i]}...`);
-                
-                const response = await fetch('modules.json' + cacheBustingParams[i], {
-                    method: 'GET',
-                    cache: 'no-cache',
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                    }
-                });
-                
-                console.log(`Попытка ${i + 1}: ответ сервера:`, response.status, response.statusText);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const modules = data.modules || [];
-                    console.log(`Попытка ${i + 1}: загружены модули из JSON:`, modules);
-                    console.log(`Попытка ${i + 1}: количество модулей:`, modules.length);
-                    
-                    if (modules.length > 0) {
-                        // Отображаем модули
-                        modulesList.innerHTML = '';
-                        modules.forEach((module, index) => {
-                            console.log(`Создаем карточку для модуля ${index + 1}:`, module);
-                            const moduleCard = document.createElement('div');
-                            moduleCard.className = 'module-card-pricing';
-                            moduleCard.innerHTML = `
-                                <h3>Модуль ${module.module}</h3>
-                                <div class="module-description">${module.title || 'Описание не указано'}</div>
-                                <div class="module-price">${module.price || 3000} рублей</div>
-                            `;
-                            modulesList.appendChild(moduleCard);
-                        });
-                        console.log('Все модули отображены');
-                        modulesLoaded = true;
-                        break;
-                    }
-                } else {
-                    console.error(`Попытка ${i + 1}: ошибка загрузки modules.json:`, response.status, response.statusText);
-                }
-            } catch (jsonError) {
-                console.error(`Попытка ${i + 1}: ошибка при загрузке из JSON:`, jsonError);
-            }
-        }
-        
-        if (modulesLoaded) {
-            return;
-        }
-        
-        // Если не удалось загрузить из JSON, пробуем загрузить из GitHub API
-        console.log('Пробуем загрузить из GitHub API...');
-        try {
-            const githubSettings = getGithubSettings();
-            // Если настройки не настроены, используем дефолтные
-            const username = githubSettings.username || 'your-username';
-            const repo = githubSettings.repo || 'your-repo';
-            
-            if (username && repo && username !== 'your-username' && repo !== 'your-repo') {
-                const githubUrl = `https://api.github.com/repos/${username}/${repo}/contents/modules.json`;
-                console.log('Загружаем из GitHub:', githubUrl);
-                
-                const response = await fetch(githubUrl, {
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json',
-                        'User-Agent': 'Mozilla/5.0'
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const content = atob(data.content);
-                    const modulesData = JSON.parse(content);
-                    const modules = modulesData.modules || [];
-                    
-                    console.log('Загружены модули из GitHub:', modules);
-                    console.log('Количество модулей из GitHub:', modules.length);
-                    
-                    if (modules.length > 0) {
-                        // Отображаем модули
-                        modulesList.innerHTML = '';
-                        modules.forEach((module, index) => {
-                            console.log(`Создаем карточку для модуля ${index + 1}:`, module);
-                            const moduleCard = document.createElement('div');
-                            moduleCard.className = 'module-card-pricing';
-                            moduleCard.innerHTML = `
-                                <h3>Модуль ${module.module}</h3>
-                                <div class="module-description">${module.title || 'Описание не указано'}</div>
-                                <div class="module-price">${module.price || 3000} рублей</div>
-                            `;
-                            modulesList.appendChild(moduleCard);
-                        });
-                        console.log('✅ Модули загружены из GitHub API');
-                        return;
-                    }
-                } else {
-                    console.error('Ошибка загрузки из GitHub API:', response.status, response.statusText);
-                }
-            }
-        } catch (githubError) {
-            console.error('Ошибка при загрузке из GitHub API:', githubError);
-        }
-        
-        // Если GitHub API не сработал, пробуем загрузить напрямую из raw GitHub
-        console.log('Пробуем загрузить напрямую из raw GitHub...');
-        try {
-            // Используем настройки GitHub или дефолтные значения
-            const githubSettings = getGithubSettings();
-            const username = githubSettings.username || 'ma89spb'; // Замените на ваш GitHub username
-            const repo = githubSettings.repo || 'programKids-main'; // Замените на название вашего репозитория
-            const rawGithubUrl = `https://raw.githubusercontent.com/${username}/${repo}/main/modules.json`;
-            console.log('Загружаем из raw GitHub:', rawGithubUrl);
-            
-            const response = await fetch(rawGithubUrl, {
-                method: 'GET',
-                cache: 'no-cache',
-                headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0'
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                const modules = data.modules || [];
-                console.log('Загружены модули из raw GitHub:', modules);
-                console.log('Количество модулей из raw GitHub:', modules.length);
-                
-                if (modules.length > 0) {
-                    // Отображаем модули
-                    modulesList.innerHTML = '';
-                    modules.forEach((module, index) => {
-                        console.log(`Создаем карточку для модуля ${index + 1}:`, module);
-                        const moduleCard = document.createElement('div');
-                        moduleCard.className = 'module-card-pricing';
-                        moduleCard.innerHTML = `
-                            <h3>Модуль ${module.module}</h3>
-                            <div class="module-description">${module.title || 'Описание не указано'}</div>
-                            <div class="module-price">${module.price || 3000} рублей</div>
-                        `;
-                        modulesList.appendChild(moduleCard);
-                    });
-                    console.log('✅ Модули загружены из raw GitHub');
-                    return;
-                }
-            } else {
-                console.error('Ошибка загрузки из raw GitHub:', response.status, response.statusText);
-            }
-        } catch (rawGithubError) {
-            console.error('Ошибка при загрузке из raw GitHub:', rawGithubError);
-        }
-        
-        // Если не удалось загрузить из GitHub, используем локальную БД как fallback
-        console.log('Используем локальную БД как fallback');
-        const modules = database.getAllContent();
-        console.log('Загружены модули из БД:', modules);
-        
-        if (modules.length === 0) {
-            modulesList.innerHTML = '<div class="loading">Модули не найдены. Попробуйте обновить страницу.</div>';
-            return;
-        }
-        
-        // Отображаем модули
+        // Рендерим из хардкода
+        const modules = (HARDCODED_MODULES && Array.isArray(HARDCODED_MODULES.modules)) ? HARDCODED_MODULES.modules : [];
         modulesList.innerHTML = '';
-        modules.forEach(module => {
+        modules.forEach((module, index) => {
             const moduleCard = document.createElement('div');
             moduleCard.className = 'module-card-pricing';
             moduleCard.innerHTML = `
@@ -1866,6 +1587,8 @@ async function loadPricingModules() {
             `;
             modulesList.appendChild(moduleCard);
         });
+        console.log('✅ Прайс-лист загружен из хардкода');
+        return;
         
     } catch (error) {
         console.error('Ошибка загрузки тарифов:', error);
