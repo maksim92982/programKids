@@ -2631,22 +2631,17 @@ function openPurchaseModal() {
     // Скрываем блок с ценой при открытии
     document.querySelector('.total-price').style.display = 'none';
     
-    // Заполняем выпадающий список модулями
+    // Заполняем выпадающий список модулями из хардкода
     const moduleSelect = document.getElementById('purchase-module');
     moduleSelect.innerHTML = '<option value="">-- Выберите модуль --</option>';
     
-    const allContent = database.getAllContent();
-    const uniqueModules = new Set();
-    
-    allContent.forEach(item => {
-        if (!uniqueModules.has(item.module)) {
-            uniqueModules.add(item.module);
-            const option = document.createElement('option');
-            option.value = item.module;
-            option.textContent = `${item.module}: ${item.title}`;
-            option.dataset.price = item.price || 3000;
-            moduleSelect.appendChild(option);
-        }
+    const modules = (HARDCODED_MODULES && Array.isArray(HARDCODED_MODULES.modules)) ? HARDCODED_MODULES.modules : [];
+    modules.forEach(module => {
+        const option = document.createElement('option');
+        option.value = module.id;
+        option.textContent = `Модуль ${module.number}: ${module.name}`;
+        option.dataset.price = module.price;
+        moduleSelect.appendChild(option);
     });
     
     // Добавляем обработчик изменения выбранного модуля
