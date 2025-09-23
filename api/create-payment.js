@@ -5,15 +5,26 @@ const API_KEY = process.env.SELFWORK_API_KEY || '4l5FOug3YpfAx54yfnXA7Rvomeylyjl
 
 module.exports = async (req, res) => {
   try {
+    // CORS/preflight support
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      res.status(200).end();
+      return;
+    }
     if (req.method !== 'POST') {
       res.status(405).json({ error: 'Method Not Allowed' });
       return;
     }
 
-    const chunks = [];
-    for await (const chunk of req) chunks.push(chunk);
-    const raw = Buffer.concat(chunks).toString('utf8');
-    const body = raw ? JSON.parse(raw) : {};
+    let body = req.body;
+    if (!body) {
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const raw = Buffer.concat(chunks).toString('utf8');
+      body = raw ? JSON.parse(raw) : {};
+    }
 
     const email = String(body.email || '').trim();
     const moduleLabel = String(body.module || '').trim();
