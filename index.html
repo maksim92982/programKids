@@ -2794,7 +2794,6 @@ document.getElementById('purchase-form').addEventListener('submit', async functi
     const moduleSelectEl = document.getElementById('purchase-module');
     const selectedOption = moduleSelectEl.options[moduleSelectEl.selectedIndex];
     let amount = Number(selectedOption?.dataset?.price || 3000);
-    // Тестовый промокод для проверки оплаты без изменения тарифов
     if ((promoCode || '').trim().toUpperCase() === 'TEST10') {
       amount = 10;
     }
@@ -2805,7 +2804,7 @@ document.getElementById('purchase-form').addEventListener('submit', async functi
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         email,
-        module: moduleLabel,
+        module: moduleVal,
         promoCode,
         bonuses: 0,
         amount,
