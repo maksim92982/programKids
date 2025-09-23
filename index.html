@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  style-src 'self' 'unsafe-inline';
-  script-src 'self' 'unsafe-inline' 'unsafe-eval';
-  frame-src https://player.vimeo.com https://vk.com https://vimeo.com 'self';
-  connect-src 'self' https://api.github.com;
+  img-src 'self' data: https://pro.selfwork.ru;
+  style-src 'self' 'unsafe-inline' https://pro.selfwork.ru;
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pro.selfwork.ru;
+  frame-src https://player.vimeo.com https://vk.com https://vimeo.com https://pro.selfwork.ru 'self';
+  connect-src 'self' https://api.github.com https://pro.selfwork.ru;
+  manifest-src 'self' https://pro.selfwork.ru;
+  font-src 'self' data: https://pro.selfwork.ru;
 ">
     
     <meta name="selfwork.ru" content="zrjmo6dkwnQJnoBt0jze63OQYkQrNNyKEYnO17n1FHvdxCuSV7" />
@@ -2084,7 +2087,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     
-    document.getElementById('register').addEventListener('submit', function(e) {
+    const registerFormEl = document.getElementById('register');
+    if (registerFormEl) registerFormEl.addEventListener('submit', function(e) {
     e.preventDefault();
     
     const email = document.getElementById('register-email').value;
@@ -2114,29 +2118,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-    document.getElementById('show-admin').addEventListener('click', function(e) {
+    const showAdminEl = document.getElementById('show-admin');
+    if (showAdminEl) showAdminEl.addEventListener('click', function(e) {
         e.preventDefault();
         showSection('admin-page');
     });
     
-    document.getElementById('admin-login-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const email = document.getElementById('admin-email').value;
-    const password = document.getElementById('admin-password').value;
-    const result = database.loginAdmin(email, password);
-    const messageEl = document.getElementById('admin-message');
-    messageEl.className = result.success ? 'success' : 'error';
-    messageEl.textContent = result.message || (result.success ? 'Вход выполнен успешно' : 'Ошибка входа');
+    const adminLoginFormEl = document.getElementById('admin-login-form');
+    if (adminLoginFormEl) adminLoginFormEl.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const email = document.getElementById('admin-email')?.value;
+        const password = document.getElementById('admin-password')?.value;
+        const result = database.loginAdmin(email, password);
+        const messageEl = document.getElementById('admin-message');
+        if (messageEl) {
+            messageEl.className = result.success ? 'success' : 'error';
+            messageEl.textContent = result.message || (result.success ? 'Вход выполнен успешно' : 'Ошибка входа');
+        }
 
-    if (result.success) {
-        setTimeout(() => {
-            document.getElementById('admin-auth').style.display = 'none';
-            document.getElementById('admin-panel').style.display = 'block';
-            loadUsers();
-            loadContent();
-        }, 500);
-    }
-});
+        if (result.success) {
+            setTimeout(() => {
+                const adminAuth = document.getElementById('admin-auth');
+                const adminPanel = document.getElementById('admin-panel');
+                if (adminAuth) adminAuth.style.display = 'none';
+                if (adminPanel) adminPanel.style.display = 'block';
+                loadUsers?.();
+                loadContent?.();
+            }, 500);
+        }
+    });
 });
 
 // ====== Код для dashboard.html ======
