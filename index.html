@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  img-src 'self' data: https://pro.selfwork.ru;
-  style-src 'self' 'unsafe-inline' https://pro.selfwork.ru;
+  img-src 'self' data: https://pro.selfwork.ru https://*.gstatic.com https://*.googleapis.com https://jsbin-user-assets.s3.amazonaws.com;
+  style-src 'self' 'unsafe-inline' https://pro.selfwork.ru https://fonts.googleapis.com;
   script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pro.selfwork.ru;
   frame-src https://player.vimeo.com https://vk.com https://vimeo.com https://pro.selfwork.ru 'self';
   connect-src 'self' https://api.github.com https://pro.selfwork.ru;
   manifest-src 'self' https://pro.selfwork.ru;
-  font-src 'self' data: https://pro.selfwork.ru;
+  font-src 'self' data: https://pro.selfwork.ru https://fonts.gstatic.com https://jsbin-user-assets.s3.amazonaws.com;
 ">
     
     <meta name="selfwork.ru" content="zrjmo6dkwnQJnoBt0jze63OQYkQrNNyKEYnO17n1FHvdxCuSV7" />
@@ -840,7 +840,7 @@ html, body {
                         <form id="login">
                             <div class="form-group">
                                 <label for="login-email">Email:</label>
-                                <input type="email" id="login-email" required>
+                                <input type="email" id="login-email" required autocomplete="username">
                             </div>
                             <div class="form-group">
                                 <label for="login-password">Пароль:</label>
@@ -860,7 +860,7 @@ html, body {
                        <form id="register">
                            <div class="form-group">
                                <label for="register-email">Email:</label>
-                               <input type="email" id="register-email" required>
+                               <input type="email" id="register-email" required autocomplete="username">
                            </div>
                            <div class="form-group">
                                <label for="register-password">Пароль:</label>
@@ -1143,7 +1143,7 @@ html, body {
                             </div>
                             <div class="form-group">
                                 <label for="github-token">GitHub Token:</label>
-                                <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx">
+                                <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxx" autocomplete="current-password">
                             </div>
                             <div class="form-group">
                                 <label for="github-repo">Repository:</label>
