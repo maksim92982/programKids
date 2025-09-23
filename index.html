@@ -2793,7 +2793,11 @@ document.getElementById('purchase-form').addEventListener('submit', async functi
   try {
     const moduleSelectEl = document.getElementById('purchase-module');
     const selectedOption = moduleSelectEl.options[moduleSelectEl.selectedIndex];
-    const amount = Number(selectedOption?.dataset?.price || 3000);
+    let amount = Number(selectedOption?.dataset?.price || 3000);
+    // Тестовый промокод для проверки оплаты без изменения тарифов
+    if ((promoCode || '').trim().toUpperCase() === 'TEST10') {
+      amount = 10;
+    }
     const moduleLabel = selectedOption?.textContent || moduleVal;
 
     const resp = await fetch(`${API_BASE}/create-payment`, {
