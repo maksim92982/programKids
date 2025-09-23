@@ -2799,14 +2799,20 @@ document.getElementById('purchase-form').addEventListener('submit', async functi
   }
 
   try {
+    const moduleSelectEl = document.getElementById('purchase-module');
+    const selectedOption = moduleSelectEl.options[moduleSelectEl.selectedIndex];
+    const amount = Number(selectedOption?.dataset?.price || 3000);
+    const moduleLabel = selectedOption?.textContent || moduleVal;
+
     const resp = await fetch(`${API_BASE}/create-payment`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         email,
-        module: moduleVal,
+        module: moduleLabel,
         promoCode,
         bonuses: 0,
+        amount,
         returnUrl: RETURN_URL
       })
     });
@@ -2894,9 +2900,10 @@ function showPurchaseModal(moduleName, bonusBalance) {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         email: currentUser.email,
-        module: moduleName,
+        module: `Модуль ${moduleName}`,
         promoCode: '',         // промо тут не вводится
         bonuses: bonusToUse,   // вот тут как раз бонусы
+        amount: modulePrice,
         returnUrl: RETURN_URL
       })
     });
