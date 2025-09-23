@@ -20,7 +20,7 @@ module.exports = async (req, res) => {
     const returnUrl = String(body.returnUrl || '/');
     const promoCode = String(body.promoCode || '').trim();
     let amount = Number(body.amount || 3000);
-    if (promoCode.toUpperCase() === 'TEST10' || moduleLabel.toUpperCase() === 'TEST10') {
+    if (promoCode.toUpperCase() === 'TEST10' || moduleLabel.toUpperCase() === 'TEST10' || /тестов/iu.test(moduleLabel)) {
       amount = 10;
     }
     amount = Math.max(1, Math.min(300000, amount));
