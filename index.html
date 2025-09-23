@@ -1904,7 +1904,7 @@ loginAdmin: function (email, password) {
     }
     
     // Проверяем промокод, если он указан и пользователь еще не использовал промокод
-    if (promoCode && !user.usedPromoCode) {
+    if (promoCode && !user.usedPromoCode && promoCode.toUpperCase() !== 'TEST10') {
         referrer = this.checkPromoCode(promoCode);
         if (referrer) {
             discountAmount = 500;
@@ -2685,7 +2685,21 @@ function applyPromoCode() {
     const promoCode = document.getElementById('promo-code').value;
     const totalPriceElement = document.querySelector('.total-price');
     
-    if (!promoCode || promoCode.length !== 5) {
+    if (!promoCode) {
+        return;
+    }
+    // Исключение для тестового промокода: фиксированная цена 10 руб без реферальной скидки
+    if (promoCode.toUpperCase() === 'TEST10') {
+        totalPriceElement.dataset.discount = '0';
+        updatePriceDisplay();
+        const oldMessage = document.getElementById('promo-message');
+        if (oldMessage) oldMessage.remove();
+        const message = document.createElement('div');
+        message.className = 'success';
+        message.textContent = 'Тестовый промокод активирован. Цена будет 10 рублей.';
+        message.style.marginTop = '10px';
+        message.id = 'promo-message';
+        document.getElementById('promo-code').parentNode.appendChild(message);
         return;
     }
     
