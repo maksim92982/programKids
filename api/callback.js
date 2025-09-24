@@ -91,12 +91,20 @@ export default async function handler(req, res) {
       const chunks = [];
       for await (const chunk of req) chunks.push(chunk);
       const raw = Buffer.concat(chunks).toString('utf8');
-      body = raw ? JSON.parse(raw) : {};
+      const ct = (req.headers['content-type'] || '').toLowerCase();
+      if (ct.includes('application/x-www-form-urlencoded')) {
+        const params = new URLSearchParams(raw);
+        body = Object.fromEntries(params.entries());
+      } else if (raw && (ct.includes('application/json') || raw.trim().startsWith('{'))) {
+        body = JSON.parse(raw);
+      } else {
+        body = {};
+      }
     }
 
     // Ожидаем поля от Самозанятый.рф. Минимум нам нужны email и название товара/module
-    const email = String(body.email || body.customer_email || '').trim().toLowerCase();
-    const moduleLabel = String(body.module || body.item || body.title || '').trim();
+    const email = String(body.email || body.customer_email || body.payer_email || '').trim().toLowerCase();
+    const moduleLabel = String(body.module || body['info[0][name]'] || body.item || body.title || '').trim();
     const orderId = String(body.order_id || body.orderId || '').trim();
 
     if (!email || !moduleLabel) {
