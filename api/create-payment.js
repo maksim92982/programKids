@@ -3,7 +3,7 @@
 const PAYMENT_URL = process.env.SELFWORK_PAYMENT_URL || 'https://pro.selfwork.ru/merchant/v1/init';
 const API_KEY = process.env.SELFWORK_API_KEY || '4l5FOug3YpfAx54yfnXA7Rvomeylyjlk';
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   try {
     // CORS/preflight support
     if (req.method === 'OPTIONS') {
@@ -14,7 +14,7 @@ module.exports = async (req, res) => {
       return;
     }
     if (req.method !== 'POST') {
-      res.status(405).json({ error: 'Method Not Allowed' });
+      res.status(200).json({ ok: true });
       return;
     }
 
@@ -63,12 +63,13 @@ module.exports = async (req, res) => {
     });
 
     const html = await resp.text();
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.status(200).end(JSON.stringify({ orderId, paymentPageHtml: html }));
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Internal Server Error' });
   }
-};
+}
 
 
