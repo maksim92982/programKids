@@ -55,10 +55,13 @@ export default async function handler(req, res) {
     params.append('signature', signature);
 
     // Отправка на шлюз
+    const shopOrigin = process.env.SHOP_ORIGIN || (() => { try { return new URL(returnUrl).origin; } catch { return 'https://program-kids.vercel.app'; } })();
     const resp = await fetch(PAYMENT_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Origin': shopOrigin,
+        'Referer': shopOrigin
       },
       body: params.toString()
     });
