@@ -45,6 +45,9 @@ export default async function handler(req, res) {
     params.append('info[0][name]', moduleLabel || 'Модуль');
     params.append('info[0][quantity]', '1');
     params.append('info[0][amount]', String(amount * 100));
+    if (email) params.append('email', email);
+    if (returnUrl) params.append('return_url', returnUrl);
+    if (process.env.SELFWORK_CALLBACK_URL) params.append('callback_url', process.env.SELFWORK_CALLBACK_URL);
 
     // Подпись: sha256(order_id + amountKop + name + quantity + amountKop + apiKey)
     const dataToSign = orderId + String(amount * 100) + (moduleLabel || 'Модуль') + '1' + String(amount * 100) + API_KEY;
@@ -55,9 +58,7 @@ export default async function handler(req, res) {
     const resp = await fetch(PAYMENT_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Origin': new URL(returnUrl).origin,
-        'Referer': new URL(returnUrl).host
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: params.toString()
     });
