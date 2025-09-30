@@ -11,13 +11,24 @@
   const detailsEl = document.getElementById('details');
   try {
     const url = new URL(location.href);
-    const email = (url.searchParams.get('email') || '').trim().toLowerCase();
-    const moduleLabel = (url.searchParams.get('module') || '').trim();
+    let email = (url.searchParams.get('email') || '').trim().toLowerCase();
+    let moduleLabel = (url.searchParams.get('module') || '').trim();
     const orderId = (url.searchParams.get('id') || url.searchParams.get('order_id') || '').trim();
 
+    // Fallback: берём детали заказа из localStorage, если провайдер не вернул email/module
     if (!email || !moduleLabel) {
-      titleEl.textContent = 'Не хватает данных возврата (email/module).';
-      detailsEl.textContent = 'Вернитесь на сайт и попробуйте снова.';
+      try {
+        const cached = JSON.parse(localStorage.getItem('last-order') || '{}');
+        if (cached && cached.email && cached.module) {
+          email = String(cached.email).trim().toLowerCase();
+          moduleLabel = String(cached.module).trim();
+        }
+      } catch (_) {}
+    }
+
+    if (!email || !moduleLabel) {
+      titleEl.textContent = 'Оплата получена. Завершение может занять время.';
+      detailsEl.textContent = 'Мы не получили email/module из шлюза. Если письмо не придёт — свяжитесь с поддержкой.';
       return;
     }
 
