@@ -3,47 +3,43 @@
 <meta charset="utf-8">
 <title>Результат оплаты</title>
 <body>
-<h2 id="title">Проверяем оплату…</h2>
+<h2 id="title">Завершаем оплату…</h2>
+<div id="details" style="font-family:Arial; font-size:14px; color:#333"></div>
 <script>
 (async function () {
-  const url = new URL(location.href);
-  const orderId = url.searchParams.get('id');
-  if (!orderId) {
-    document.getElementById('title').textContent = 'Не указан номер заказа';
-    return;
-  }
+  const titleEl = document.getElementById('title');
+  const detailsEl = document.getElementById('details');
   try {
-    const r = await fetch('/api/order-status?id=' + encodeURIComponent(orderId));
-    if (!r.ok) throw new Error('bad');
-    const { status, payload } = await r.json();
+    const url = new URL(location.href);
+    const email = (url.searchParams.get('email') || '').trim().toLowerCase();
+    const moduleLabel = (url.searchParams.get('module') || '').trim();
+    const orderId = (url.searchParams.get('id') || url.searchParams.get('order_id') || '').trim();
 
-    if (status === 'succeeded') {
-      // На сервере вебхук уже проверил подпись и запомнил email+module
-      // Здесь открываем доступ локальному юзеру (как и раньше делал клиент)
-      const email  = payload.email;
-      const module = payload.module;
-      // если юзер уже есть — залогинимся
-      const known = database.users.find(u=>u.email===email);
-      if (!known) {
-        database.registerUser(email, database.generatePassword());
-      }
-      database.loginUser(email, database.getUserById(database.users.find(u=>u.email===email).id)?.password || '', false);
-      // отметим покупку (без списания бонусов — это сделал сервер)
-      if (!database.currentUser.availableModules.includes(module)) {
-        database.currentUser.availableModules.push(module);
-        database.saveToLocalStorage();
-      }
-      document.getElementById('title').textContent = 'Оплата прошла успешно. Доступ открыт.';
-      setTimeout(()=>{ location.href = '/'; }, 1500);
-    } else if (status === 'processing') {
-      document.getElementById('title').textContent = 'Платёж обрабатывается… Обновляем.';
-      setTimeout(()=>location.reload(), 2000);
-    } else {
-      document.getElementById('title').textContent = 'Оплата не прошла или отменена.';
-      setTimeout(()=>{ location.href = '/'; }, 2000);
+    if (!email || !moduleLabel) {
+      titleEl.textContent = 'Не хватает данных возврата (email/module).';
+      detailsEl.textContent = 'Вернитесь на сайт и попробуйте снова.';
+      return;
     }
+
+    const resp = await fetch('/api/callback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, module: moduleLabel, order_id: orderId, status: 'succeeded' })
+    });
+
+    if (!resp.ok) {
+      titleEl.textContent = 'Оплата получена, но обработка задерживается.';
+      detailsEl.textContent = 'Мы отправим письмо с доступом на ваш email в ближайшее время.';
+      setTimeout(() => { location.href = '/'; }, 2500);
+      return;
+    }
+
+    titleEl.textContent = 'Оплата прошла успешно. Доступ будет отправлен на email.';
+    detailsEl.innerHTML = 'Email: <b>' + email + '</b><br>Модуль: <b>' + moduleLabel + '</b>';
+    setTimeout(() => { location.href = '/'; }, 1800);
   } catch (e) {
-    document.getElementById('title').textContent = 'Ошибка проверки статуса.';
+    titleEl.textContent = 'Ошибка завершения оплаты.';
+    detailsEl.textContent = 'Повторите попытку позже.';
   }
 })();
 </script>
