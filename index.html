@@ -2805,6 +2805,30 @@ document.getElementById('purchase-form').addEventListener('submit', async functi
   }
 
   try {
+    // 1) Проверка email на занятость через сервер (GitHub users.json)
+    try {
+      const check = await fetch(`${API_BASE}/check-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (check.ok) {
+        const { exists } = await check.json();
+        if (exists) {
+          // Повторная покупка: продолжаем без блокировки
+          console.log('Повторная покупка для существующего пользователя:', email);
+        }
+      }
+    } catch (_) { /* мягкий фейл — продолжаем оплату */ }
+
+    // 2) Сохранить детали заказа локально (fallback)
+    localStorage.setItem('last-order', JSON.stringify({
+      email,
+      module: moduleVal,
+      promoCode,
+      ts: Date.now()
+    }));
+
     const moduleSelectEl = document.getElementById('purchase-module');
     const selectedOption = moduleSelectEl.options[moduleSelectEl.selectedIndex];
     let amount = Number(selectedOption?.dataset?.price || 3000);
@@ -2818,7 +2842,7 @@ document.getElementById('purchase-form').addEventListener('submit', async functi
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         email,
-        module: moduleVal,
+        module: moduleLabel,
         promoCode,
         bonuses: 0,
         amount,
